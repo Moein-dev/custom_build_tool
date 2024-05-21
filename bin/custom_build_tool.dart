@@ -21,12 +21,13 @@ void main(List<String> arguments) {
             (line) => line.startsWith('version:'),
             orElse: () => '',
           );
-  String semanticVersion = currentVersion.split('+').first;
+  String version = currentVersion.substring(8);
+  String semanticVersion = version.trim().split('+').first;
   if (!noVersion) {
     // Read the current version from pubspec.yaml
 
-    String semver = currentVersion.split(' ').last.split('+').first;
-    int buildNumber = int.parse(currentVersion.split('+').last);
+    String semver = version.split(' ').last.split('+').first;
+    int buildNumber = int.parse(version.split('+').last);
 
     // Increment the build number
     int newBuildNumber = buildNumber + 1;
@@ -52,7 +53,7 @@ void main(List<String> arguments) {
     }
 
     // Create the new version
-    String newVersion = "$major.$minor.$patch+$newBuildNumber";
+    String newVersion = "version: $major.$minor.$patch+$newBuildNumber";
 
     // Write the new version back to pubspec.yaml
     String pubspecContent = File('pubspec.yaml')
@@ -63,7 +64,7 @@ void main(List<String> arguments) {
 
     print("Version updated to $newVersion");
   } else {
-    print("Using existing version $currentVersion");
+    print("Using existing version $version");
   }
 
   // Run flutter build apk based on the build type
