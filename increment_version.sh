@@ -6,35 +6,19 @@ usage() {
   exit 1
 }
 
-# Check for errors and handle them gracefully
-check_error() {
-  if [ $? -ne 0 ]; then
-    echo "Error: $1"
-    exit 1
-  fi
-}
-
 # Check for --no-version flag
-no_version=false
+no-version=false
 if [ "$1" == "--no-version" ]; then
-  no_version=true
+  no-version=true
   shift
 fi
 
 # Set default build type to 'release' if not provided
 build_type=${1:-release}
 
-# Handle cases where pubspec.yaml is not found
-if [ ! -f "pubspec.yaml" ]; then
-  echo "Error: pubspec.yaml not found."
-  exit 1
-fi
-
-if [ "$no_version" == false ]; then
+if [ "$no-version" == false ]; then
   # Read the current version from pubspec.yaml
-  current_version=$(grep -E '^version: ' pubspec.yaml | cut -d ' ' -f 2 || true)
-  check_error "Failed to read version from pubspec.yaml"
-
+  current_version=$(grep -E '^version: ' pubspec.yaml | cut -d ' ' -f 2)
   IFS='+' read -r semver build_number <<< "$current_version"
 
   # Increment the build number
@@ -43,12 +27,16 @@ if [ "$no_version" == false ]; then
   # Split the semantic version into parts
   IFS='.' read -r major minor patch <<< "$semver"
 
-  # Implement semantic versioning logic
+  # Increment the patch version
   patch=$((patch + 1))
+
+  # If patch reaches 10, reset to 0 and increment minor version
   if [ $patch -ge 10 ]; then
     patch=0
     minor=$((minor + 1))
   fi
+
+  # If minor reaches 10, reset to 0 and increment major version
   if [ $minor -ge 10 ]; then
     minor=0
     major=$((major + 1))
@@ -59,14 +47,11 @@ if [ "$no_version" == false ]; then
 
   # Write the new version back to pubspec.yaml
   sed -i '' "s/^version: .*/version: $new_version/" pubspec.yaml
-  check_error "Failed to update version in pubspec.yaml"
 
   echo "Version updated to $new_version"
 else
   # Read the current version without updating
-  current_version=$(grep -E '^version: ' pubspec.yaml | cut -d ' ' -f 2 || true)
-  check_error "Failed to read version from pubspec.yaml"
-
+  current_version=$(grep -E '^version: ' pubspec.yaml | cut -d ' ' -f 2)
   IFS='+' read -r semver build_number <<< "$current_version"
   new_version="$semver+$build_number"
   echo "Using existing version $new_version"
@@ -74,11 +59,10 @@ fi
 
 # Run flutter build apk based on the build type
 flutter build apk
-check_error "Failed to build APK"
+
 
 # Get the app name from pubspec.yaml
-app_name=$(grep -E '^name: ' pubspec.yaml | cut -d ' ' -f 2 || true)
-check_error "Failed to read app name from pubspec.yaml"
+app_name=$(grep -E '^name: ' pubspec.yaml | cut -d ' ' -f 2)
 
 # Extract the semantic version part (without build number)
 IFS='+' read -r semantic_version build_number <<< "$new_version"
@@ -86,14 +70,15 @@ IFS='+' read -r semantic_version build_number <<< "$new_version"
 # Define the new APK file name
 new_apk_name="${app_name}_v${semantic_version}_${build_type}.apk"
 
-# Customize the output APK path if needed
-apk_path="build/app/outputs/flutter-apk/app-${build_type}.apk"
+# Determine the output APK path based on build type
+apk_path="build/app/outputs/flutter-apk/app-release.apk"
+
 
 # Rename the APK file
 new_apk_path="build/app/outputs/flutter-apk/${new_apk_name}"
 mv "$apk_path" "$new_apk_path"
 
-# Consider alternative methods for a cross-platform clickable path
+# Print the clickable path to the APK file
 echo "APK renamed to ${new_apk_name}"
 echo "You can find the APK at:"
-echo "file://$(pwd)/${new_apk_path}"
+echo -e "\033[1;34mfile://$(pwd)/${new_apk_path}\033[0m"
