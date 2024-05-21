@@ -14,6 +14,13 @@ void main(List<String> arguments) {
     arguments.remove("--no-version");
   }
 
+  // Get the app name from pubspec.yaml
+  String appName =
+      File('pubspec.yaml').readAsStringSync().split('\n').firstWhere(
+            (line) => line.startsWith('name:'),
+            orElse: () => '',
+          );
+
   // Set default build type to 'release' if not provided
   String buildType = arguments.isNotEmpty ? arguments.first : "release";
   String currentVersion =
@@ -23,6 +30,7 @@ void main(List<String> arguments) {
           );
   String version = currentVersion.substring(8);
   String semanticVersion = version.trim().split('+').first;
+
   if (!noVersion) {
     // Read the current version from pubspec.yaml
 
@@ -60,7 +68,6 @@ void main(List<String> arguments) {
         .readAsStringSync()
         .replaceFirst(currentVersion, newVersion);
     File('pubspec.yaml').writeAsStringSync(pubspecContent);
-    semanticVersion = newVersion.split('+').first;
 
     print("Version updated to $newVersion");
   } else {
@@ -69,13 +76,6 @@ void main(List<String> arguments) {
 
   // Run flutter build apk based on the build type
   Process.runSync('flutter', ['build', 'apk']);
-
-  // Get the app name from pubspec.yaml
-  String appName =
-      File('pubspec.yaml').readAsStringSync().split('\n').firstWhere(
-            (line) => line.startsWith('name:'),
-            orElse: () => '',
-          );
 
   appName = appName.split(' ').last;
 
