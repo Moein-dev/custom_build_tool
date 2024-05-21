@@ -14,7 +14,7 @@ void main(List<String> arguments) {
 }
 
 void runShellScript({required bool noUpdate, required String buildType}) async {
-  final scriptPath = 'path_to_your_script/increment_version.sh'; // Update with the actual path
+  final scriptPath = 'scripts/increment_version.sh'; // Update with the actual path
 
   final arguments = [
     if (noUpdate) '--no_update',

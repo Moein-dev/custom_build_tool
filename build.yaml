@@ -3,7 +3,6 @@ targets:
     sources:
       - "lib/**"
       - "bin/**"
-      - "scripts/**"
 builders:
   build_cli:
     options:
