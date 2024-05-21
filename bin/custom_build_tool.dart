@@ -1,89 +1,32 @@
-import 'dart:developer';
 import 'dart:io';
-
 import 'package:args/args.dart';
-import 'package:flutter/services.dart'; // For pubspec.yaml manipulation
 
-void main(List<String> arguments) async {
-  final parser = ArgParser();
-  parser.addFlag('no-version', abbr: 'n', help: 'Skip automatic version update');
-  parser.addOption('build-type', abbr: 't', help: 'Build type (release, debug, profile)', defaultsTo: 'release');
+void main(List<String> arguments) {
+  final parser = ArgParser()
+    ..addFlag('no_update', negatable: false, defaultsTo: false)
+    ..addOption('type', defaultsTo: 'release');
 
-  final results = parser.parse(arguments);
+  final argResults = parser.parse(arguments);
+  final noUpdate = argResults['no_update'] as bool;
+  final buildType = argResults['type'] as String;
 
-  // Get app name and current version from pubspec.yaml
-  final String appName = await _getAppNameFromPubspec();
-  final String currentVersion = await _getVersionFromPubspec();
-
-  if (!results['no-version']) {
-    // Update version (similar logic from Bash script)
-    final List<String> versionParts = currentVersion.split('+');
-    final String semanticVersion = versionParts[0];
-    int buildNumber = int.parse(versionParts.length > 1 ? versionParts[1] : '0');
-
-    buildNumber++;
-
-    final List<int> versionNumbers = semanticVersion.split('.').map(int.parse).toList();
-    if (versionNumbers[2] >= 10) {
-      versionNumbers[2] = 0;
-      versionNumbers[1]++;
-    }
-    if (versionNumbers[1] >= 10) {
-      versionNumbers[1] = 0;
-      versionNumbers[0]++;
-    }
-
-    final String newVersion = '${versionNumbers[0]}.${versionNumbers[1]}.${versionNumbers[2]}+$buildNumber';
-
-    await _updateVersionInPubspec(newVersion);
-
-    log('Version updated to $newVersion');
-  } else {
-    log('Using existing version $currentVersion');
-  }
-
-  // Build the APK
-  final exitCode = await Process.run('flutter', ['build', 'apk']);
-  if (exitCode != 0) {
-    throw Exception('Failed to build APK. Exit code: $exitCode');
-  }
-
-  // Get the default output path based on build type (adjust if needed)
-  final String apkPath = 'build/app/outputs/flutter-apk/app-${results['build-type']}.apk';
-
-  // Construct the new APK filename
-  final String newApkName = '${appName}_v${currentVersion.split('+')[0]}_${results['build-type']}.apk';
-
-  // Rename the APK
-  await File(apkPath).rename('build/app/outputs/flutter-apk/$newApkName');
-
-  log('APK renamed to $newApkName');
-  log('You can find the APK at:');
-  log('file://${Directory.current.path}/build/app/outputs/flutter-apk/$newApkName');
+  runShellScript(noUpdate: noUpdate, buildType: buildType);
 }
 
-Future<String> _getAppNameFromPubspec() async {
-  final String content = await rootBundle.loadString('pubspec.yaml');
-  final match = RegExp(r'^name: (.+)$', multiLine: true).firstMatch(content);
-  if (match != null) {
-    return match.group(1)!.trim();
-  } else {
-    throw Exception('Failed to find app name in pubspec.yaml');
-  }
-}
+void runShellScript({required bool noUpdate, required String buildType}) async {
+  final scriptPath = 'path_to_your_script/increment_version.sh'; // Update with the actual path
 
-Future<String> _getVersionFromPubspec() async {
-  final String content = await rootBundle.loadString('pubspec.yaml');
-  final match = RegExp(r'^version: (.+)$', multiLine: true).firstMatch(content);
-  if (match != null) {
-    return match.group(1)!.trim();
-  } else {
-    throw Exception('Failed to find version in pubspec.yaml');
-  }
-}
+  final arguments = [
+    if (noUpdate) '--no_update',
+    buildType,
+  ];
 
-Future<void> _updateVersionInPubspec(String newVersion) async {
-  final String content = await rootBundle.loadString('pubspec.yaml');
-  final String updatedContent = content.replaceAll(RegExp(r'^version: .+$', multiLine: true), 'version: $newVersion');
-  await File('pubspec.yaml').writeAsString(updatedContent);
+  final result = await Process.run('bash', [scriptPath, ...arguments]);
+
+  stdout.write(result.stdout);
+  stderr.write(result.stderr);
+
+  if (result.exitCode != 0) {
+    exit(result.exitCode);
+  }
 }
