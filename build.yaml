@@ -1,0 +1,10 @@
+targets:
+  $default:
+    sources:
+      - "lib/**"
+      - "bin/**"
+      - "**"
+builders:
+  build_cli:
+    options:
+      dart_executable_name: "custom_build_tool"
