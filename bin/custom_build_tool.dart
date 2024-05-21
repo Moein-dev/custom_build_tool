@@ -1,32 +1,95 @@
 import 'dart:io';
-import 'package:args/args.dart';
 
 void main(List<String> arguments) {
-  final parser = ArgParser()
-    ..addFlag('no-version', negatable: false, defaultsTo: false)
-    ..addOption('type', defaultsTo: 'release');
-
-  final argResults = parser.parse(arguments);
-  final noUpdate = argResults['no-version'] as bool;
-  final buildType = argResults['type'] as String;
-
-  runShellScript(noUpdate: noUpdate, buildType: buildType);
-}
-
-void runShellScript({required bool noUpdate, required String buildType}) async {
-  final scriptPath = 'increment_version.sh'; // Update with the actual path
-
-  final arguments = [
-    if (noUpdate) '--no-version',
-    buildType,
-  ];
-
-  final result = await Process.run('bash', [scriptPath, ...arguments]);
-
-  stdout.write(result.stdout);
-  stderr.write(result.stderr);
-
-  if (result.exitCode != 0) {
-    exit(result.exitCode);
+  // Function to display usage
+  void usage() {
+    print("Usage: dart build_apk.dart [--no-version] [release|debug|profile]");
+    exit(1);
   }
+
+  // Check for --no-version flag
+  bool noVersion = false;
+  if (arguments.contains("--no-version")) {
+    noVersion = true;
+    arguments.remove("--no-version");
+  }
+
+  // Set default build type to 'release' if not provided
+  String buildType = arguments.isNotEmpty ? arguments.first : "release";
+  String currentVersion =
+      File('pubspec.yaml').readAsStringSync().split('\n').firstWhere(
+            (line) => line.startsWith('version:'),
+            orElse: () => '',
+          );
+  String semanticVersion = currentVersion.split('+').first;
+  if (!noVersion) {
+    // Read the current version from pubspec.yaml
+
+    String semver = currentVersion.split(' ').last.split('+').first;
+    int buildNumber = int.parse(currentVersion.split('+').last);
+
+    // Increment the build number
+    int newBuildNumber = buildNumber + 1;
+
+    List<String> parts = semver.split('.');
+    int major = int.parse(parts[0]);
+    int minor = int.parse(parts[1]);
+    int patch = int.parse(parts[2]);
+
+    // Increment the patch version
+    patch++;
+
+    // If patch reaches 10, reset to 0 and increment minor version
+    if (patch >= 10) {
+      patch = 0;
+      minor++;
+    }
+
+    // If minor reaches 10, reset to 0 and increment major version
+    if (minor >= 10) {
+      minor = 0;
+      major++;
+    }
+
+    // Create the new version
+    String newVersion = "$major.$minor.$patch+$newBuildNumber";
+
+    // Write the new version back to pubspec.yaml
+    String pubspecContent = File('pubspec.yaml')
+        .readAsStringSync()
+        .replaceFirst(currentVersion, newVersion);
+    File('pubspec.yaml').writeAsStringSync(pubspecContent);
+    semanticVersion = newVersion.split('+').first;
+
+    print("Version updated to $newVersion");
+  } else {
+    print("Using existing version $currentVersion");
+  }
+
+  // Run flutter build apk based on the build type
+  Process.runSync('flutter', ['build', 'apk']);
+
+  // Get the app name from pubspec.yaml
+  String appName =
+      File('pubspec.yaml').readAsStringSync().split('\n').firstWhere(
+            (line) => line.startsWith('name:'),
+            orElse: () => '',
+          );
+
+  appName = appName.split(' ').last;
+
+  // Define the new APK file name
+  String newApkName = "${appName}_v${semanticVersion}_$buildType.apk";
+
+  // Determine the output APK path based on build type
+  String apkPath = "build/app/outputs/flutter-apk/app-release.apk";
+
+  // Rename the APK file
+  String newApkPath = "build/app/outputs/flutter-apk/$newApkName";
+  File(apkPath).renameSync(newApkPath);
+
+  // Print the clickable path to the APK file
+  print("APK renamed to $newApkName");
+  print("You can find the APK at:");
+  print("\x1B[34mfile://${Directory.current.path}/$newApkPath\x1B[0m");
 }

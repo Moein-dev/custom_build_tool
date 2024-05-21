@@ -2,7 +2,6 @@ targets:
   $default:
     sources:
       - "bin/**"
-      - "scripts/**"
 builders:
   build_cli:
     options:
