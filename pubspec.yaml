@@ -1,5 +1,5 @@
 name: custom_build_tool
-description: A sample command-line application.
+description: A pakcage for Streamline Version Updates and APK Builds in Flutter Projects.
 version: 1.0.11
 # repository: https://github.com/my_org/my_repo
 environment:
