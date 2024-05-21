@@ -1,6 +1,8 @@
 import 'dart:io';
 
 void main(List<String> arguments) {
+  List<String> values = [];
+  values.addAll(arguments.toList());
   // Function to display usage
   void usage() {
     print("Usage: dart build_apk.dart [--no-version] [release|debug|profile]");
@@ -9,9 +11,9 @@ void main(List<String> arguments) {
 
   // Check for --no-version flag
   bool noVersion = false;
-  if (arguments.contains("--no-version")) {
+  if (values.contains("--no-version")) {
     noVersion = true;
-    arguments.remove("--no-version");
+    values.remove("--no-version");
   }
 
   // Get the app name from pubspec.yaml
@@ -22,7 +24,7 @@ void main(List<String> arguments) {
           );
 
   // Set default build type to 'release' if not provided
-  String buildType = arguments.isNotEmpty ? arguments.first : "release";
+  String buildType = values.isNotEmpty ? values.first : "release";
   String currentVersion =
       File('pubspec.yaml').readAsStringSync().split('\n').firstWhere(
             (line) => line.startsWith('version:'),
