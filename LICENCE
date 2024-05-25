@@ -1,21 +1,11 @@
-MIT License
 
-Copyright (c) 2024 Moein Moradi
+# Summary
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this Package and associated documentation files (the "custom_build_tool"), to deal
-in the Package without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Package, and to permit persons to whom the Package is
-furnished to do so, subject to the following conditions:
+- **Installation Instructions**: Clear steps for adding the package to `dev_dependencies` and running `flutter pub get`.
+- **Usage Instructions**: How to run the tool, reset preferences, and get help.
+- **Features Section**: Brief description of the main features.
+- **Example Section**: Step-by-step example to guide users.
+- **Contributing Section**: Information on how to contribute.
+- **License Section**: Licensing information.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Package.
-
-THE Package IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE Package OR THE USE OR OTHER DEALINGS IN THE
-Package.
+Feel free to adjust the content as needed to better fit your project's specifics or any additional details you'd like to include. If you need further customization or additional sections, let me know!
