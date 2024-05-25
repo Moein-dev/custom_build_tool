@@ -11,72 +11,89 @@ dev_dependencies:
   custom_build_tool:
     git:
       url: https://github.com/Moein-dev/custom_build_tool.git
+```
 
 Then, run the following command to get the package:
 
 ```sh
 flutter pub get
+```
 
-Usage
-Running the Tool
+## Usage
+
+### Running the Tool
+
 To run the custom_build_tool, use the following command:
 
 ```sh
 flutter pub run custom_build_tool
+```
 
-Command-Line Options
+### Command-Line Options
+
 --reset
 Use the --reset option to reset user preferences:
 
 ```sh
 flutter pub run custom_build_tool --reset
+```
 
 --help
 Use the --help option to display help information:
 
 ```sh
 flutter pub run custom_build_tool --help
+```
 
+## Example
 
-Example
 Here's a step-by-step example of how to use the custom_build_tool in your Flutter project:
 
-1. Add the package to pubspec.yaml:
+1.Add the package to pubspec.yaml:
 
+```yaml
 dev_dependencies:
   custom_build_tool:
     git:
       url: https://github.com/Moein-dev/custom_build_tool.git
+```
 
-2. Get the package:
+2.Get the package:
 
 ```sh
 flutter pub get
+```
 
-3. run the tool:
+3.run the tool:
 
 ```sh
 flutter pub run custom_build_tool
+```
 
-4. Reset preferences if needed:
+4.Reset preferences if needed:
 
 ```sh
 flutter pub run custom_build_tool --reset
+```
 
-5. Display help information:
+5.Display help information:
 
 ```sh
 flutter pub run custom_build_tool --help
+```
 
-Features
+## Features
+
 . Version Incrementing: Automatically increments the version number in pubspec.yaml.
 . Build Type Selection: Allows users to select the build type (release, debug, profile) interactively.
 . Customizable Preferences: Preferences can be saved and reset as needed.
 
 
-Contributing
+## Contributing
+
 If you want to contribute to this project, please feel free to submit issues, fork the repository, and send pull requests.
 
 
-License
+## License
+
 This project is licensed under the MIT License - see the LICENSE file for details.
