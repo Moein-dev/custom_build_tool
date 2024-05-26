@@ -3,9 +3,9 @@ import 'build_manager.dart';
 import 'config_manager.dart';
 import 'preferences_manager.dart';
 import 'version_manager.dart';
+import 'readme_manager.dart';
 
 void main(List<String> arguments) async {
-
   if (arguments.contains("--help")) {
     print("\nUsage: flutter pub run custom_build_tool [--reset] [--configure]");
     exit(1);
@@ -85,4 +85,6 @@ void main(List<String> arguments) async {
       'save': 'off',
     });
   }
+
+  ReadmeManager.promptForReadmeUpdate(newVersion);
 }

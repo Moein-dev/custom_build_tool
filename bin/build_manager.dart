@@ -7,6 +7,13 @@ class BuildManager {
 
     bool releaseKeyExists = _checkReleaseKeyExists();
 
+    if (!releaseKeyExists) {
+      if (_promptForReleaseKeyCreation()) {
+        _createReleaseKey();
+        _configureReleaseKeyInGradle();
+      }
+    }
+
     List<String> buildArgs = ['build', 'apk'];
     if (buildType == 'release' && !releaseKeyExists) {
       print(
@@ -81,6 +88,99 @@ class BuildManager {
       return content.contains('signingConfig signingConfigs.release');
     }
     return false;
+  }
+
+  static bool _promptForReleaseKeyCreation() {
+    print("Do you want to create a release key?\n");
+    print("1. Yes");
+    print("2. No");
+    print("\n =>");
+    String? choice = stdin.readLineSync();
+    return choice == '1';
+  }
+
+  static void _createReleaseKey() {
+    print("\nCreating release key...");
+    print("Please enter the following details:");
+
+    print("Key store password: ");
+    String? keyStorePassword = stdin.readLineSync();
+
+    print("Key alias: ");
+    String? keyAlias = stdin.readLineSync();
+
+    print("Key password: ");
+    String? keyPassword = stdin.readLineSync();
+
+    print("Your first and last name: ");
+    String? name = stdin.readLineSync();
+
+    print("Your organizational unit: ");
+    String? organizationalUnit = stdin.readLineSync();
+
+    print("Your organization: ");
+    String? organization = stdin.readLineSync();
+
+    print("Your city or locality: ");
+    String? city = stdin.readLineSync();
+
+    print("Your state or province: ");
+    String? state = stdin.readLineSync();
+
+    print("Your two-letter country code: ");
+    String? countryCode = stdin.readLineSync();
+
+    Process.runSync('keytool', [
+      '-genkey',
+      '-v',
+      '-keystore',
+      'android${Platform.pathSeparator}app${Platform.pathSeparator}key.jks',
+      '-keyalg',
+      'RSA',
+      '-keysize',
+      '2048',
+      '-validity',
+      '10000',
+      '-alias',
+      keyAlias!,
+      '-keypass',
+      keyPassword!,
+      '-storepass',
+      keyStorePassword!,
+      '-dname',
+      'CN=$name, OU=$organizationalUnit, O=$organization, L=$city, S=$state, C=$countryCode'
+    ]);
+  }
+
+  static void _configureReleaseKeyInGradle() {
+    print("\nConfiguring release key in build.gradle...");
+
+    File buildGradle = File(
+        'android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
+    if (buildGradle.existsSync()) {
+      String content = buildGradle.readAsStringSync();
+      if (!content.contains('signingConfigs.release')) {
+        content = content.replaceFirst('buildTypes {', '''signingConfigs {
+    release {
+        keyAlias keystoreProperties['keyAlias']
+        keyPassword keystoreProperties['keyPassword']
+        storeFile file(keystoreProperties['storeFile'])
+        storePassword keystoreProperties['storePassword']
+    }
+}
+
+buildTypes {''');
+
+        buildGradle.writeAsStringSync(content);
+
+        File keyProperties =
+            File('android${Platform.pathSeparator}key.properties');
+        keyProperties.writeAsStringSync('''storePassword=your_store_password
+keyPassword=your_key_password
+keyAlias=your_key_alias
+storeFile=key.jks''');
+      }
+    }
   }
 
   static String _getApkPath(String buildType, String platform) {
