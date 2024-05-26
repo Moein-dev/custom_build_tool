@@ -10,13 +10,13 @@ class MockGetAppInfo extends Mock implements GetAppInfo {}
 void main() {
   testWidgets('App displays version correctly', (WidgetTester tester) async {
     // Create a mock AppInfoModel
-    final mockAppInfo = AppInfoModel(appVersion: '1.0.0');
+    const mockAppInfo = AppInfoModel(appVersion: '1.0.0');
 
     // Mock the GetAppInfo.details() method to return the mockAppInfo
     when(GetAppInfo.details()).thenAnswer((_) async => mockAppInfo);
 
     // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp(info: mockAppInfo));
+    await tester.pumpWidget(const MyApp(info: mockAppInfo));
 
     // Verify that the app title is displayed correctly
     expect(find.text('Custom build tool Example'), findsOneWidget);
