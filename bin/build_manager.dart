@@ -166,14 +166,13 @@ storeFile=key.jks''');
 }
 
 buildTypes {''');
-
         buildGradle.writeAsStringSync(content);
       }
 
       // Update buildTypes.release signingConfig
       content = buildGradle.readAsStringSync();
       content = content.replaceFirst(
-        'signingConfig signingConfigs.debug',
+        '// TODO: Add your own signing config for the release build.\n            // Signing with the debug keys for now, so `flutter run --release` works.\n            signingConfig signingConfigs.debug',
         'signingConfig signingConfigs.release'
       );
       buildGradle.writeAsStringSync(content);
