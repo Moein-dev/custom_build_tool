@@ -55,9 +55,9 @@ class BuildManager {
     }
     print("\nBuild completed successfully.");
 
-    String newIpaName = "${appName}_v${semanticVersion}_${buildType}.ipa";
+    String newIpaName = "${appName}_v${semanticVersion}_$buildType.ipa";
     String ipaPath = "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa";
-    String newIpaPath = "${ipaPath}${Platform.pathSeparator}$newIpaName";
+    String newIpaPath = "$ipaPath${Platform.pathSeparator}$newIpaName";
 
     Directory(ipaPath).listSync().forEach((file) {
       if (file.path.endsWith('.ipa')) {
@@ -175,7 +175,7 @@ android {'''
     release {
         keyAlias keystoreProperties['keyAlias']
         keyPassword keystoreProperties['keyPassword']
-        storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+        storeFile file(keystoreProperties['storeFile'])
         storePassword keystoreProperties['storePassword']
     }
 }
@@ -187,8 +187,8 @@ buildTypes {''');
       // Update buildTypes.release signingConfig
       content = buildGradle.readAsStringSync();
       content = content.replaceFirst(
-        'signingConfig signingConfigs.debug',
-        'signingConfig signingConfigs.release'
+        '// TODO: Add your own signing config for the release build.\n            // Signing with the debug keys for now, so `flutter run --release` works.\n            signingConfig signingConfigs.debug',
+        'signingConfig signingConfigs.debug \n signingConfig signingConfigs.release'
       );
       buildGradle.writeAsStringSync(content);
     }
