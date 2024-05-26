@@ -55,9 +55,9 @@ class BuildManager {
     }
     print("\nBuild completed successfully.");
 
-    String newIpaName = "${appName}_v${semanticVersion}_$buildType.ipa";
+    String newIpaName = "${appName}_v${semanticVersion}_${buildType}.ipa";
     String ipaPath = "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa";
-    String newIpaPath = "$ipaPath${Platform.pathSeparator}$newIpaName";
+    String newIpaPath = "${ipaPath}${Platform.pathSeparator}$newIpaName";
 
     Directory(ipaPath).listSync().forEach((file) {
       if (file.path.endsWith('.ipa')) {
@@ -153,6 +153,21 @@ storeFile=key.jks''');
     File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
     if (buildGradle.existsSync()) {
       String content = buildGradle.readAsStringSync();
+
+      // Ensure keystoreProperties are loaded
+      if (!content.contains('def keystoreProperties')) {
+        content = content.replaceFirst(
+          'android {',
+          '''def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {'''
+        );
+      }
+
       if (!content.contains('signingConfigs.release')) {
         content = content.replaceFirst(
           'buildTypes {',
@@ -160,7 +175,7 @@ storeFile=key.jks''');
     release {
         keyAlias keystoreProperties['keyAlias']
         keyPassword keystoreProperties['keyPassword']
-        storeFile file(keystoreProperties['storeFile'])
+        storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
         storePassword keystoreProperties['storePassword']
     }
 }
@@ -172,7 +187,7 @@ buildTypes {''');
       // Update buildTypes.release signingConfig
       content = buildGradle.readAsStringSync();
       content = content.replaceFirst(
-        '// TODO: Add your own signing config for the release build.\n            // Signing with the debug keys for now, so `flutter run --release` works.\n            signingConfig signingConfigs.debug',
+        'signingConfig signingConfigs.debug',
         'signingConfig signingConfigs.release'
       );
       buildGradle.writeAsStringSync(content);
