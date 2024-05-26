@@ -1,8 +1,7 @@
 import 'dart:io';
 
 class BuildManager {
-  static void buildAndroidApk(
-      String appName, String semanticVersion, String buildType) {
+  static void buildAndroidApk(String appName, String semanticVersion, String buildType) {
     print("\nBuilding APK for Android with build type: $buildType...");
 
     bool releaseKeyExists = _checkReleaseKeyExists();
@@ -16,57 +15,47 @@ class BuildManager {
 
     List<String> buildArgs = ['build', 'apk'];
     if (buildType == 'release' && !releaseKeyExists) {
-      print(
-          "\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
+      print("\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
     } else if (buildType != 'test') {
       buildArgs.add('--$buildType');
     }
 
     ProcessResult result = Process.runSync('flutter', buildArgs);
     if (result.exitCode != 0) {
-      print(
-          "\nError: Failed to build APK. Please check the flutter build output for details.");
+      print("\nError: Failed to build APK. Please check the flutter build output for details.");
       print(result.stderr);
       exit(1);
     }
     print("\nBuild completed successfully.");
 
-    String apkPath =
-        _getApkPath(buildType == 'test' ? 'release' : buildType, 'android');
-    String newApkName =
-        "${appName}_v${semanticVersion}_${buildType == 'test' ? 'test' : buildType}.apk";
-    String newApkPath =
-        "build${Platform.pathSeparator}app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk${Platform.pathSeparator}$newApkName";
+    String apkPath = _getApkPath(buildType == 'test' ? 'release' : buildType, 'android');
+    String newApkName = "${appName}_v${semanticVersion}_${buildType == 'test' ? 'test' : buildType}.apk";
+    String newApkPath = "build${Platform.pathSeparator}app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk${Platform.pathSeparator}$newApkName";
 
     if (File(apkPath).existsSync()) {
       File(apkPath).renameSync(newApkPath);
       print("APK renamed to $newApkName\n");
       print("You can find the APK at:\n");
-      print(
-          "\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$newApkPath\x1B[0m");
+      print("\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$newApkPath\x1B[0m");
     } else {
-      print(
-          "\nError: APK file not found at $apkPath. Please check the build output.");
+      print("\nError: APK file not found at $apkPath. Please check the build output.");
     }
   }
 
-  static void buildIosApp(
-      String appName, String semanticVersion, String buildType) {
+  static void buildIosApp(String appName, String semanticVersion, String buildType) {
     print("\nBuilding app for iOS with build type: $buildType...");
 
     List<String> buildArgs = ['build', 'ios', '--$buildType'];
     ProcessResult result = Process.runSync('flutter', buildArgs);
     if (result.exitCode != 0) {
-      print(
-          "\nError: Failed to build iOS app. Please check the flutter build output for details.");
+      print("\nError: Failed to build iOS app. Please check the flutter build output for details.");
       print(result.stderr);
       exit(1);
     }
     print("\nBuild completed successfully.");
 
     String newIpaName = "${appName}_v${semanticVersion}_$buildType.ipa";
-    String ipaPath =
-        "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa";
+    String ipaPath = "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa";
     String newIpaPath = "$ipaPath${Platform.pathSeparator}$newIpaName";
 
     Directory(ipaPath).listSync().forEach((file) {
@@ -74,15 +63,13 @@ class BuildManager {
         File(file.path).renameSync(newIpaPath);
         print("IPA renamed to $newIpaName\n");
         print("You can find the IPA at:\n");
-        print(
-            "\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$newIpaPath\x1B[0m");
+        print("\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$newIpaPath\x1B[0m");
       }
     });
   }
 
   static bool _checkReleaseKeyExists() {
-    File buildGradle = File(
-        'android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
+    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
     if (buildGradle.existsSync()) {
       String content = buildGradle.readAsStringSync();
       return content.contains('signingConfig signingConfigs.release');
@@ -150,17 +137,25 @@ class BuildManager {
       '-dname',
       'CN=$name, OU=$organizationalUnit, O=$organization, L=$city, S=$state, C=$countryCode'
     ]);
+
+    // Create the key.properties file
+    File keyProperties = File('android${Platform.pathSeparator}key.properties');
+    keyProperties.writeAsStringSync('''storePassword=$keyStorePassword
+keyPassword=$keyPassword
+keyAlias=$keyAlias
+storeFile=key.jks''');
   }
 
   static void _configureReleaseKeyInGradle() {
     print("\nConfiguring release key in build.gradle...");
 
-    File buildGradle = File(
-        'android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
+    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
     if (buildGradle.existsSync()) {
       String content = buildGradle.readAsStringSync();
       if (!content.contains('signingConfigs.release')) {
-        content = content.replaceFirst('buildTypes {', '''signingConfigs {
+        content = content.replaceFirst(
+          'buildTypes {',
+          '''signingConfigs {
     release {
         keyAlias keystoreProperties['keyAlias']
         keyPassword keystoreProperties['keyPassword']
@@ -172,13 +167,6 @@ class BuildManager {
 buildTypes {''');
 
         buildGradle.writeAsStringSync(content);
-
-        File keyProperties =
-            File('android${Platform.pathSeparator}key.properties');
-        keyProperties.writeAsStringSync('''storePassword=your_store_password
-keyPassword=your_key_password
-keyAlias=your_key_alias
-storeFile=key.jks''');
       }
     }
   }
@@ -201,8 +189,7 @@ storeFile=key.jks''');
     }
   }
 
-  static String getBuildType(Map<String, dynamic> preferences,
-      Map<String, dynamic> config, List<String> allBuildTypes) {
+  static String getBuildType(Map<String, dynamic> preferences, Map<String, dynamic> config, List<String> allBuildTypes) {
     String? buildType = preferences['buildType'] ?? config['buildType'];
 
     if (buildType == null || buildType.isEmpty) {

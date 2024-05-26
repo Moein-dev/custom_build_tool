@@ -1,7 +1,7 @@
 name: example
 description: An example application to demonstrate the usage of your_package.
 publish_to: 'none' # This is to prevent the example from being published.
-version: 0.1.2+6
+version: 0.1.3+7
 
 environment:
   sdk: '>=2.12.0 <3.0.0'
