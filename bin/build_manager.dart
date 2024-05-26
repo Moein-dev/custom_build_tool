@@ -16,6 +16,7 @@ class BuildManager {
     List<String> buildArgs = ['build', 'apk'];
     if (buildType == 'release' && !releaseKeyExists) {
       print("\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
+      buildArgs.remove('--release');
     } else if (buildType != 'test') {
       buildArgs.add('--$buildType');
     }
@@ -168,6 +169,14 @@ buildTypes {''');
 
         buildGradle.writeAsStringSync(content);
       }
+
+      // Update buildTypes.release signingConfig
+      content = buildGradle.readAsStringSync();
+      content = content.replaceFirst(
+        'signingConfig signingConfigs.debug',
+        'signingConfig signingConfigs.release'
+      );
+      buildGradle.writeAsStringSync(content);
     }
   }
 
