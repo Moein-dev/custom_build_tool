@@ -88,11 +88,9 @@ flutter pub run custom_build_tool --help
 . Build Type Selection: Allows users to select the build type (release, debug, profile) interactively.
 . Customizable Preferences: Preferences can be saved and reset as needed.
 
-
 ## Contributing
 
 If you want to contribute to this project, please feel free to submit issues, fork the repository, and send pull requests.
-
 
 ## License
 
