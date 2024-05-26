@@ -65,17 +65,21 @@ void main(List<String> arguments) async {
   }
 
   String version = currentVersion;
+  String newVersion = version;
   String semanticVersion = version.split('+').first;
 
   if (!noVersion) {
     String upgradeType = _getUpgradeType();
-    String newVersion = _incrementVersion(version, upgradeType);
+    newVersion = _incrementVersion(version, upgradeType);
     String updatedPubspecContent = pubspecContent.replaceFirst('version: $currentVersion', 'version: $newVersion');
     pubspecFile.writeAsStringSync(updatedPubspecContent);
     print("Version updated to $newVersion");
   } else {
     print("Using existing version $version");
   }
+
+  // Update semanticVersion after increment
+  semanticVersion = newVersion.split('+').first;
 
   // Run flutter build apk based on the build type
   print("Building APK with build type: $buildType...");
