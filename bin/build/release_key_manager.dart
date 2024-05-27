@@ -1,8 +1,12 @@
 import 'dart:io';
 
 class ReleaseKeyManager {
+  static bool checkReleaseKeyExists() {
+    return File('android/app/key.jks').existsSync();
+  }
+
   static bool promptForReleaseKeyCreation() {
-    print("Do you want to create a release key?\n");
+    print("\nDo you want to create a release key?\n");
     print("1. Yes");
     print("2. No");
     print("\n =>");
@@ -12,36 +16,30 @@ class ReleaseKeyManager {
 
   static void createReleaseKey() {
     print("\nCreating release key...");
+    
     print("Please enter the following details:");
-
     print("Key store password: ");
-    String? keyStorePassword = stdin.readLineSync();
-
+    String? storePass = stdin.readLineSync();
     print("Key alias: ");
-    String? keyAlias = stdin.readLineSync();
-
+    String? alias = stdin.readLineSync();
     print("Key password: ");
-    String? keyPassword = stdin.readLineSync();
-
+    String? keyPass = stdin.readLineSync();
     print("Your first and last name: ");
-    String? name = stdin.readLineSync();
-
+    String? dname = stdin.readLineSync();
     print("Your organizational unit: ");
-    String? organizationalUnit = stdin.readLineSync();
-
+    String? ou = stdin.readLineSync();
     print("Your organization: ");
-    String? organization = stdin.readLineSync();
-
+    String? o = stdin.readLineSync();
     print("Your city or locality: ");
-    String? city = stdin.readLineSync();
-
+    String? l = stdin.readLineSync();
     print("Your state or province: ");
-    String? state = stdin.readLineSync();
-
+    String? s = stdin.readLineSync();
     print("Your two-letter country code: ");
-    String? countryCode = stdin.readLineSync();
+    String? c = stdin.readLineSync();
 
-    Process.runSync('keytool', [
+    String dnameComplete = 'CN=$dname, OU=$ou, O=$o, L=$l, S=$s, C=$c';
+
+    ProcessResult result = Process.runSync('keytool', [
       '-genkey',
       '-v',
       '-keystore',
@@ -53,76 +51,82 @@ class ReleaseKeyManager {
       '-validity',
       '10000',
       '-alias',
-      keyAlias!,
-      '-keypass',
-      keyPassword!,
-      '-storepass',
-      keyStorePassword!,
+      alias!,
       '-dname',
-      'CN=$name, OU=$organizationalUnit, O=$organization, L=$city, S=$state, C=$countryCode'
+      dnameComplete,
+      '-storepass',
+      storePass!,
+      '-keypass',
+      keyPass!
     ]);
 
-    // Create the key.properties file
-    File keyProperties = File('android${Platform.pathSeparator}key.properties');
-    keyProperties.writeAsStringSync('''storePassword=$keyStorePassword
-keyPassword=$keyPassword
-keyAlias=$keyAlias
-storeFile=key.jks''');
+    if (result.exitCode != 0) {
+      print("\nError: Failed to create the keystore. Please check the keytool output for details.");
+      print(result.stderr);
+      exit(1);
+    } else {
+      print("\nKeystore created successfully.");
+    }
   }
 
   static void configureReleaseKeyInGradle() {
     print("\nConfiguring release key in build.gradle...");
 
-    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
-    if (buildGradle.existsSync()) {
-      String content = buildGradle.readAsStringSync();
+    File keyPropertiesFile = File('android/key.properties');
+    keyPropertiesFile.writeAsStringSync('''
+storePassword=<store-password>
+keyPassword=<key-password>
+keyAlias=<key-alias>
+storeFile=key.jks
+''');
 
-      // Ensure keystoreProperties are loaded
-      if (!content.contains('def keystoreProperties')) {
-        content = content.replaceFirst(
-          'android {',
-          '''def keystoreProperties = new Properties()
+    String buildGradlePath = 'android/app/build.gradle';
+    File buildGradleFile = File(buildGradlePath);
+
+    if (!buildGradleFile.existsSync()) {
+      print("\nError: build.gradle file not found.");
+      exit(1);
+    }
+
+    String buildGradleContent = buildGradleFile.readAsStringSync();
+
+    if (!buildGradleContent.contains('keystoreProperties')) {
+      buildGradleContent = '''
+def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-android {'''
-        );
-      }
-
-      if (!content.contains('signingConfigs.release')) {
-        content = content.replaceFirst(
-          'buildTypes {',
-          '''signingConfigs {
-    release {
-        keyAlias keystoreProperties['keyAlias']
-        keyPassword keystoreProperties['keyPassword']
-        storeFile file(keystoreProperties['storeFile'])
-        storePassword keystoreProperties['storePassword']
-    }
+android {
+  $buildGradleContent
 }
-
-buildTypes {''');
-        buildGradle.writeAsStringSync(content);
-      }
-
-      // Update buildTypes.release signingConfig
-      content = buildGradle.readAsStringSync();
-      content = content.replaceFirst(
-        'signingConfig signingConfigs.debug',
-        'signingConfig signingConfigs.release'
-      );
-      buildGradle.writeAsStringSync(content);
+      ''';
     }
-  }
 
-  static bool checkReleaseKeyExists() {
-    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
-    if (buildGradle.existsSync()) {
-      String content = buildGradle.readAsStringSync();
-      return content.contains('signingConfig signingConfigs.release');
+    if (!buildGradleContent.contains('signingConfigs')) {
+      buildGradleContent = buildGradleContent.replaceFirst('android {', '''
+android {
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
     }
-    return false;
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+''');
+    }
+
+    buildGradleFile.writeAsStringSync(buildGradleContent.replaceAll('<store-password>', keyPropertiesFile.readAsLinesSync()[0].split('=')[1].trim())
+        .replaceAll('<key-password>', keyPropertiesFile.readAsLinesSync()[1].split('=')[1].trim())
+        .replaceAll('<key-alias>', keyPropertiesFile.readAsLinesSync()[2].split('=')[1].trim()));
+
+    print("\nRelease key configured successfully in build.gradle.");
   }
 }
