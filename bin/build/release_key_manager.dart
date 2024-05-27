@@ -98,9 +98,7 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
-android {
   $buildGradleContent
-}
       ''';
     }
 
