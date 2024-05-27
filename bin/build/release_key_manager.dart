@@ -83,29 +83,26 @@ keyAlias=<key-alias>
 storeFile=key.jks
 ''');
 
-    // Define the path to the build.gradle file
-    final buildGradlePath = join('android', 'app', 'build.gradle');
+  // Define the path to the build.gradle file
+  final buildGradlePath = join('android', 'app', 'build.gradle');
 
-    // Read the build.gradle file
-    final buildGradleFile = File(buildGradlePath);
-    if (!buildGradleFile.existsSync()) {
-      print('build.gradle file not found!');
-      return;
-    }
+  // Read the build.gradle file
+  final buildGradleFile = File(buildGradlePath);
+  if (!buildGradleFile.existsSync()) {
+    print('build.gradle file not found!');
+    return;
+  }
 
-    final buildGradleContent = buildGradleFile.readAsStringSync();
+  final buildGradleContent = buildGradleFile.readAsStringSync();
 
-    // Define the code to be inserted after plugins {}
-    final codeToInsertAfterPlugins = '''
+  // Define the code to be inserted after android { starts
+  final codeToInsertInsideAndroid = '''
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
-''';
 
-    // Define the code to be inserted inside android {}
-    final codeToInsertInsideAndroid = '''
 signingConfigs {
     release {
         keyAlias keystoreProperties['keyAlias']
@@ -122,38 +119,22 @@ buildTypes {
 }
 ''';
 
-    // Find the position after plugins {}
-    final pluginsRegex = RegExp(r'plugins\s*\{[^}]*\}');
-    final pluginsMatch = pluginsRegex.firstMatch(buildGradleContent);
+  // Find the android {} section
+  final androidRegex = RegExp(r'android\s*\{');
+  final androidMatch = androidRegex.firstMatch(buildGradleContent);
 
-    if (pluginsMatch == null) {
-      print('plugins {} section not found in build.gradle!');
-      return;
-    }
+  if (androidMatch == null) {
+    print('android {} section not found in build.gradle!');
+    return;
+  }
 
-    final insertPositionAfterPlugins = pluginsMatch.end;
+  final insertPositionInsideAndroid = androidMatch.end;
 
-    // Insert the code after plugins {}
-    var updatedBuildGradleContent =
-        '${buildGradleContent.substring(0, insertPositionAfterPlugins)}\n\n$codeToInsertAfterPlugins${buildGradleContent.substring(insertPositionAfterPlugins)}';
+  // Insert the code inside android {}
+  final updatedBuildGradleContent = '${buildGradleContent.substring(0, insertPositionInsideAndroid)}\n$codeToInsertInsideAndroid${buildGradleContent.substring(insertPositionInsideAndroid)}';
 
-    // Find the android {} section
-    final androidRegex = RegExp(r'android\s*\{');
-    final androidMatch = androidRegex.firstMatch(updatedBuildGradleContent);
-
-    if (androidMatch == null) {
-      print('android {} section not found in build.gradle!');
-      return;
-    }
-
-    final insertPositionInsideAndroid = androidMatch.end;
-
-    // Insert the code inside android {}
-    updatedBuildGradleContent =
-        '${updatedBuildGradleContent.substring(0, insertPositionInsideAndroid)}\n$codeToInsertInsideAndroid${updatedBuildGradleContent.substring(insertPositionInsideAndroid)}';
-
-    // Write the updated content back to build.gradle
-    buildGradleFile.writeAsStringSync(updatedBuildGradleContent);
+  // Write the updated content back to build.gradle
+  buildGradleFile.writeAsStringSync(updatedBuildGradleContent);
 
     buildGradleFile.writeAsStringSync(buildGradleContent
         .replaceAll('<store-password>',
