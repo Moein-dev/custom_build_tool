@@ -6,17 +6,19 @@ class BuildManager {
   static void buildAndroidApk(String appName, String semanticVersion, String buildType) {
     print("\nBuilding APK for Android with build type: $buildType...");
 
-    bool releaseKeyExists = ReleaseKeyManager.checkReleaseKeyExists();
+    if (buildType != 'test') {
+      bool releaseKeyExists = ReleaseKeyManager.checkReleaseKeyExists();
 
-    if (!releaseKeyExists) {
-      if (ReleaseKeyManager.promptForReleaseKeyCreation()) {
-        ReleaseKeyManager.createReleaseKey();
-        ReleaseKeyManager.configureReleaseKeyInGradle();
+      if (!releaseKeyExists && buildType == 'release') {
+        if (ReleaseKeyManager.promptForReleaseKeyCreation()) {
+          ReleaseKeyManager.createReleaseKey();
+          ReleaseKeyManager.configureReleaseKeyInGradle();
+        }
       }
     }
 
     List<String> buildArgs = ['build', 'apk'];
-    if (buildType == 'release' && !releaseKeyExists) {
+    if (buildType == 'release' && !ReleaseKeyManager.checkReleaseKeyExists()) {
       print("\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
       buildArgs.remove('--release');
     } else if (buildType != 'test') {
@@ -68,19 +70,23 @@ class BuildManager {
 
     Map<String, dynamic> settings = SettingsManager.loadSettings();
     String userSpecifiedPath = settings['app_path']?['ios'] ?? defaultIpaPath;
-    String newIpaPath = userSpecifiedPath.endsWith(Platform.pathSeparator) ? "$userSpecifiedPath$newIpaName" : "$userSpecifiedPath${Platform.pathSeparator}$newIpaName";
+    String userIpaPath = userSpecifiedPath.endsWith(Platform.pathSeparator) ? "$userSpecifiedPath$newIpaName" : "$userSpecifiedPath${Platform.pathSeparator}$newIpaName";
 
-    Directory(defaultIpaPath).listSync().forEach((file) {
-      if (file.path.endsWith('.ipa')) {
-        if (file.path != newIpaPath) {
-          Directory(userSpecifiedPath).createSync(recursive: true);
-          File(file.path).renameSync(newIpaPath);
+    if (Directory(defaultIpaPath).existsSync()) {
+      Directory(defaultIpaPath).listSync().forEach((file) {
+        if (file.path.endsWith('.ipa')) {
+          if (file.path != userIpaPath) {
+            Directory(userSpecifiedPath).createSync(recursive: true);
+            File(file.path).renameSync(userIpaPath);
+          }
+          print("IPA renamed to $newIpaName\n");
+          print("You can find the IPA at:\n");
+          print("\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$userIpaPath\x1B[0m");
         }
-        print("IPA renamed to $newIpaName\n");
-        print("You can find the IPA at:\n");
-        print("\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$newIpaPath\x1B[0m");
-      }
-    });
+      });
+    } else {
+      print("\nError: IPA file not found at $defaultIpaPath. Please check the build output.");
+    }
   }
 
   static String _getApkPath(String buildType, String platform) {
@@ -102,6 +108,10 @@ class BuildManager {
   }
 
   static String getBuildType(Map<String, dynamic> preferences, Map<String, dynamic> config, List<String> allBuildTypes) {
+    if (!allBuildTypes.contains('debug')) {
+      allBuildTypes.add('debug');
+    }
+
     String? buildType = preferences['build_type'] ?? config['build_type'];
 
     if (buildType == null || buildType.isEmpty) {
