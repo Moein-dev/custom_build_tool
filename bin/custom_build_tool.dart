@@ -1,19 +1,20 @@
 import 'dart:io';
-import 'build_manager.dart';
+import 'build/build_manager.dart';
 import 'config_manager.dart';
-import 'preferences_manager.dart';
 import 'version_manager.dart';
 import 'readme_manager.dart';
+import 'settings_manager.dart';
 
 void main(List<String> arguments) async {
+
   if (arguments.contains("--help")) {
     print("\nUsage: flutter pub run custom_build_tool [--reset] [--configure]");
     exit(1);
   }
 
   if (arguments.contains("--reset")) {
-    PreferencesManager.resetPreferences();
-    print("\nPreferences have been reset.");
+    SettingsManager.resetSettings();
+    print("\nSettings have been reset.");
     exit(0);
   }
 
@@ -22,22 +23,19 @@ void main(List<String> arguments) async {
     exit(0);
   }
 
-  // Load user preferences and config
-  Map<String, dynamic> preferences = PreferencesManager.loadPreferences();
-  Map<String, dynamic> config = ConfigManager.loadConfig();
+  // Load user settings
+  Map<String, dynamic> settings = SettingsManager.loadSettings();
+  bool usePreferences = settings['default'] == true;
 
-  bool usePreferences = preferences['save'] == 'on';
-
-  // If preferences are empty and config is empty, it's the first run
-  if (preferences.isEmpty && config.isEmpty) {
+  // If settings are empty, it's the first run
+  if (settings.isEmpty) {
     print("\nIt looks like this is your first time running the CLI.");
     ConfigManager.promptForDefaultConfig();
-    preferences = PreferencesManager.loadPreferences();
-    config = ConfigManager.loadConfig();
-    usePreferences = preferences['save'] == 'on';
+    settings = SettingsManager.loadSettings();
+    usePreferences = settings['default'] == true;
   }
 
-  int platformChoice = usePreferences ? preferences['platformChoice'] : ConfigManager.getPlatformChoice();
+  int platformChoice = usePreferences ? settings['platformChoice'] : ConfigManager.getPlatformChoice();
 
   List<String> buildTypes = [];
   if (platformChoice == 1 || platformChoice == 3) {
@@ -51,9 +49,9 @@ void main(List<String> arguments) async {
   Set<String> allBuildTypes = {...buildTypes.map((e) => e.toLowerCase())};
   allBuildTypes.add("test");
 
-  String buildType = usePreferences ? preferences['buildType'] : BuildManager.getBuildType(preferences, config, allBuildTypes.toList());
+  String buildType = usePreferences ? settings['build_type'] : BuildManager.getBuildType(settings, settings, allBuildTypes.toList());
 
-  bool noVersion = usePreferences ? preferences['noVersion'] : VersionManager.getVersionUpgradeChoice(preferences, config);
+  bool noVersion = usePreferences ? settings['noVersion'] : VersionManager.getVersionUpgradeChoice(settings, settings) == 'no';
 
   String version = VersionManager.getCurrentVersion();
   String newVersion = version;
@@ -78,13 +76,14 @@ void main(List<String> arguments) async {
   }
 
   if (!usePreferences) {
-    PreferencesManager.savePreferences({
+    SettingsManager.saveSettings({
       'platformChoice': platformChoice,
-      'buildType': buildType,
+      'build_type': buildType,
       'noVersion': noVersion,
-      'save': 'off',
+      'default': false,
     });
   }
 
+  // Ask user if they want to add details in README.md for this version
   ReadmeManager.promptForReadmeUpdate(newVersion);
 }

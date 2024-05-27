@@ -2,6 +2,40 @@ import 'dart:io';
 import 'package:yaml/yaml.dart';
 
 class VersionManager {
+  static String getCurrentVersion() {
+    File pubspecFile = File('pubspec.yaml');
+    if (!pubspecFile.existsSync()) {
+      print("\nError: pubspec.yaml file not found.");
+      exit(1);
+    }
+    String pubspecContent = pubspecFile.readAsStringSync();
+    var pubspec = loadYaml(pubspecContent);
+
+    String? currentVersion = pubspec['version'];
+    if (currentVersion == null) {
+      print("\nError: 'version' not found in pubspec.yaml");
+      exit(1);
+    }
+    return currentVersion;
+  }
+
+  static String getAppName() {
+    File pubspecFile = File('pubspec.yaml');
+    if (!pubspecFile.existsSync()) {
+      print("\nError: pubspec.yaml file not found.");
+      exit(1);
+    }
+    String pubspecContent = pubspecFile.readAsStringSync();
+    var pubspec = loadYaml(pubspecContent);
+
+    String? appName = pubspec['name'];
+    if (appName == null) {
+      print("\nError: 'name' not found in pubspec.yaml");
+      exit(1);
+    }
+    return appName;
+  }
+
   static String incrementVersion(String currentVersion, String upgradeType) {
     List<String> parts = currentVersion.split('+');
     String semver = parts[0].trim();
@@ -32,96 +66,44 @@ class VersionManager {
   }
 
   static void updateVersion(String newVersion, String pubspecContent) {
+    String currentVersion = getCurrentVersion();
+    String updatedPubspecContent = pubspecContent.replaceFirst('version: $currentVersion', 'version: $newVersion');
     File pubspecFile = File('pubspec.yaml');
-    String updatedPubspecContent = pubspecContent.replaceFirst(
-        RegExp(r'version: [0-9]+\.[0-9]+\.[0-9]+\+\d+'),
-        'version: $newVersion');
     pubspecFile.writeAsStringSync(updatedPubspecContent);
     print("\nVersion updated to $newVersion");
   }
 
-  static String getCurrentVersion() {
-    File pubspecFile = File('pubspec.yaml');
-    if (!pubspecFile.existsSync()) {
-      print("\nError: pubspec.yaml file not found.");
-      exit(1);
-    }
-    String pubspecContent = pubspecFile.readAsStringSync();
-    var pubspec = loadYaml(pubspecContent);
-
-    String? currentVersion = pubspec['version'];
-    if (currentVersion == null) {
-      print("\nError: 'version' not found in pubspec.yaml");
-      exit(1);
-    }
-
-    return currentVersion;
-  }
-
-  static String getAppName() {
-    File pubspecFile = File('pubspec.yaml');
-    if (!pubspecFile.existsSync()) {
-      print("\nError: pubspec.yaml file not found.");
-      exit(1);
-    }
-    String pubspecContent = pubspecFile.readAsStringSync();
-    var pubspec = loadYaml(pubspecContent);
-
-    String? appName = pubspec['name'];
-    if (appName == null) {
-      print("\nError: 'name' not found in pubspec.yaml");
-      exit(1);
-    }
-
-    return appName;
-  }
-
-  static bool getVersionUpgradeChoice(
-      Map<String, dynamic> preferences, Map<String, dynamic> config) {
+  static String getVersionUpgradeChoice(Map<String, dynamic> preferences, Map<String, dynamic> config) {
     bool? noVersion = preferences['noVersion'] ?? config['noVersion'];
 
     if (noVersion == null) {
-      int choice;
-      do {
-        print("Upgrade version?\n");
-        print("1. Yes");
-        print("2. No");
-        print("\n =>");
-        String? upgradeChoice = stdin.readLineSync();
-        choice = int.tryParse(upgradeChoice!) ?? -1;
-        if (choice < 1 || choice > 2) {
-          print("\nInvalid choice. Please select a valid option.\n");
-        }
-      } while (choice < 1 || choice > 2);
-      noVersion = (choice == 2);
+      print("Upgrade version?\n");
+      print("1. Yes");
+      print("2. No");
+      print("\n =>");
+      String? upgradeChoice = stdin.readLineSync();
+
+      noVersion = (upgradeChoice == '2');
     } else {
-      print(
-          "\nUsing default version upgrade choice: ${noVersion ? 'No' : 'Yes'}");
+      print("\nUsing default version upgrade choice: ${noVersion ? 'No' : 'Yes'}");
     }
-    return noVersion;
+    return noVersion ? 'no' : 'yes';
   }
 
   static String getUpgradeType() {
-    int choice;
-    do {
-      print("What is your upgrade type?\n");
-      print("1. Major");
-      print("2. Minor");
-      print("3. Patch");
-      print("\n =>");
-      String? upgradeTypeChoice = stdin.readLineSync();
-      choice = int.tryParse(upgradeTypeChoice!) ?? -1;
-      if (choice < 1 || choice > 3) {
-        print("\nInvalid choice. Please select a valid option.\n");
-      }
-    } while (choice < 1 || choice > 3);
+    print("What is your upgrade type?\n");
+    print("1. Major");
+    print("2. Minor");
+    print("3. Patch");
+    print("\n =>");
+    String? upgradeTypeChoice = stdin.readLineSync();
 
-    switch (choice) {
-      case 1:
+    switch (upgradeTypeChoice) {
+      case '1':
         return 'major';
-      case 2:
+      case '2':
         return 'minor';
-      case 3:
+      case '3':
         return 'patch';
       default:
         print("\nInvalid choice. Defaulting to 'patch'.");

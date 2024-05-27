@@ -1,50 +1,36 @@
 import 'dart:io';
-import 'dart:convert';
-import 'preferences_manager.dart';
+import 'settings_manager.dart';
 
 class ConfigManager {
   static Map<String, dynamic> loadConfig() {
-    try {
-      String content = File('config.json').readAsStringSync();
-      return jsonDecode(content);
-    } catch (e) {
-      return {};
-    }
+    return SettingsManager.loadSettings();
   }
 
   static void saveConfig(Map<String, dynamic> config) {
-    String content = jsonEncode(config);
-    File('config.json').writeAsStringSync(content);
+    SettingsManager.saveSettings(config);
   }
 
   static void configureDefaults() {
-    Map<String, dynamic> config = {};
+    Map<String, dynamic> config = loadConfig();
 
-    print("Set default build type:\n");
-    List<String> androidBuildTypes = getAndroidBuildTypes();
-    List<String> iosSchemes = getIOSSchemes();
-
-    Set<String> allBuildTypes = {
-      ...androidBuildTypes.map((e) => e.toLowerCase()),
-      ...iosSchemes.map((e) => e.toLowerCase())
+    // Set default app paths
+    config['app_path'] = {
+      'android': "build${Platform.pathSeparator}app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk",
+      'ios': "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa"
     };
 
-    allBuildTypes.add("test");
-
-    for (int i = 0; i < allBuildTypes.length; i++) {
-      print("${i + 1}. ${allBuildTypes.elementAt(i)}");
+    // Set default build type
+    print("Set default build type:\n");
+    List<String> buildTypes = _getBuildTypes();
+    for (int i = 0; i < buildTypes.length; i++) {
+      print("${i + 1}. ${buildTypes[i]}");
     }
     print("\n =>");
     String? buildTypeChoice = stdin.readLineSync();
-    int choiceIndex = int.parse(buildTypeChoice!) - 1;
+    int choiceIndex = int.tryParse(buildTypeChoice!)! - 1;
+    config['build_type'] = buildTypes[choiceIndex];
 
-    if (choiceIndex < allBuildTypes.length) {
-      config['buildType'] = allBuildTypes.elementAt(choiceIndex);
-    } else {
-      print("\nInvalid choice. Defaulting to 'release'.\n");
-      config['buildType'] = 'release';
-    }
-
+    // Set default version upgrade choice
     print("Set default version upgrade choice:\n");
     print("1. Yes");
     print("2. No");
@@ -52,14 +38,50 @@ class ConfigManager {
     String? upgradeChoice = stdin.readLineSync();
     config['noVersion'] = (upgradeChoice == '2');
 
+    // Set default saving option
+    print("Set default configuration:\n");
+    print("1. Yes");
+    print("2. No");
+    print("\n =>");
+    String? saveChoice = stdin.readLineSync();
+    config['default'] = (saveChoice == '1');
+
     saveConfig(config);
     print("\nConfiguration saved.");
   }
 
+  static void promptForDefaultConfig() {
+    print("Would you like to set the current configuration as default?\n");
+    print("1. Yes");
+    print("2. No");
+    print("\n =>");
+    String? choice = stdin.readLineSync();
+
+    if (choice == '1') {
+      configureDefaults();
+    } else {
+      print("\nProceeding without saving defaults.");
+    }
+  }
+
+  static List<String> _getBuildTypes() {
+    // Example build types, replace with actual fetching logic
+    return ['release', 'debug', 'profile', 'test'];
+  }
+
+  static int getPlatformChoice() {
+    print("Choose your platform:\n");
+    print("1. Android");
+    print("2. iOS");
+    print("3. Both");
+    print("\n =>");
+    String? platformChoice = stdin.readLineSync();
+    return int.tryParse(platformChoice!) ?? 3;
+  }
+
   static List<String> getAndroidBuildTypes() {
     List<String> buildTypes = [];
-    File buildGradle = File(
-        'android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
+    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
     if (buildGradle.existsSync()) {
       String content = buildGradle.readAsStringSync();
       RegExp exp = RegExp(r'buildTypes\s*\{([^}]+)\}');
@@ -67,8 +89,7 @@ class ConfigManager {
       if (match != null) {
         String buildTypesContent = match.group(1)!;
         RegExp buildTypeExp = RegExp(r'\b(\w+)\s*\{');
-        for (Match buildTypeMatch
-            in buildTypeExp.allMatches(buildTypesContent)) {
+        for (Match buildTypeMatch in buildTypeExp.allMatches(buildTypesContent)) {
           buildTypes.add(buildTypeMatch.group(1)!);
         }
       }
@@ -78,8 +99,7 @@ class ConfigManager {
 
   static List<String> getAndroidProductFlavors() {
     List<String> flavors = [];
-    File buildGradle = File(
-        'android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
+    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
     if (buildGradle.existsSync()) {
       String content = buildGradle.readAsStringSync();
       RegExp exp = RegExp(r'productFlavors\s*\{([^}]+)\}');
@@ -113,42 +133,9 @@ class ConfigManager {
     }
 
     if (schemes.isEmpty) {
+      // Set default schemes if nothing is found or an error occurs
       schemes = ['Release', 'Debug'];
     }
     return schemes;
-  }
-
-  static void promptForDefaultConfig() {
-    ConfigManager.configureDefaults();
-
-    print("Would you like to save the current configuration as default?\n");
-    print("1. Yes");
-    print("2. No");
-    print("\n =>");
-    String? choice = stdin.readLineSync();
-
-    if (choice == '1') {
-      PreferencesManager.savePreferences({'save': 'on'});
-    } else {
-      PreferencesManager.savePreferences({'save': 'off'});
-      print("\nProceeding without saving defaults.");
-    }
-  }
-
-  static int getPlatformChoice() {
-    int choice;
-    do {
-      print("Which platform would you like to build for?\n");
-      print("1. Android");
-      print("2. iOS");
-      print("3. Both");
-      print("\n =>");
-      String? platformChoice = stdin.readLineSync();
-      choice = int.tryParse(platformChoice!) ?? -1;
-      if (choice < 1 || choice > 3) {
-        print("\nInvalid choice. Please select a valid option.\n");
-      }
-    } while (choice < 1 || choice > 3);
-    return choice;
   }
 }
