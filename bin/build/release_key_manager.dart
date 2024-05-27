@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:path/path.dart';
+
 class ReleaseKeyManager {
   static bool checkReleaseKeyExists() {
     return File('android/app/key.jks').existsSync();
@@ -16,7 +18,7 @@ class ReleaseKeyManager {
 
   static void createReleaseKey() {
     print("\nCreating release key...");
-    
+
     print("Please enter the following details:");
     print("Key store password: ");
     String? storePass = stdin.readLineSync();
@@ -61,7 +63,8 @@ class ReleaseKeyManager {
     ]);
 
     if (result.exitCode != 0) {
-      print("\nError: Failed to create the keystore. Please check the keytool output for details.");
+      print(
+          "\nError: Failed to create the keystore. Please check the keytool output for details.");
       print(result.stderr);
       exit(1);
     } else {
@@ -80,68 +83,85 @@ keyAlias=<key-alias>
 storeFile=key.jks
 ''');
 
-    String buildGradlePath = 'android/app/build.gradle';
-    File buildGradleFile = File(buildGradlePath);
+    // Define the path to the build.gradle file
+    final buildGradlePath = join('android', 'app', 'build.gradle');
 
+    // Read the build.gradle file
+    final buildGradleFile = File(buildGradlePath);
     if (!buildGradleFile.existsSync()) {
-      print("\nError: build.gradle file not found.");
-      exit(1);
+      print('build.gradle file not found!');
+      return;
     }
 
-    String buildGradleContent = buildGradleFile.readAsStringSync();
+    final buildGradleContent = buildGradleFile.readAsStringSync();
 
-    // Add keystore properties after plugins block and before localProperties
-    String pluginsBlock = '''
-plugins {
-    id "com.android.application"
-    id "kotlin-android"
-    id "dev.flutter.flutter-gradle-plugin"
-}
-''';
-    String localPropertiesBlock = 'def localProperties = new Properties()';
-
-    if (!buildGradleContent.contains('def keystoreProperties')) {
-      buildGradleContent = buildGradleContent.replaceFirst(
-        pluginsBlock,
-        '''
-$pluginsBlock
-
+    // Define the code to be inserted after plugins {}
+    final codeToInsertAfterPlugins = '''
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
-''');
+''';
 
-      buildGradleContent = buildGradleContent.replaceFirst(
-        localPropertiesBlock,
-        '''
-$localPropertiesBlock
-''');
+    // Define the code to be inserted inside android {}
+    final codeToInsertInsideAndroid = '''
+signingConfigs {
+    release {
+        keyAlias keystoreProperties['keyAlias']
+        keyPassword keystoreProperties['keyPassword']
+        storeFile file(keystoreProperties['storeFile'])
+        storePassword keystoreProperties['storePassword']
+    }
+}
+buildTypes {
+    release {
+        signingConfig signingConfigs.debug
+        signingConfig signingConfigs.release
+    }
+}
+''';
+
+    // Find the position after plugins {}
+    final pluginsRegex = RegExp(r'plugins\s*\{[^}]*\}');
+    final pluginsMatch = pluginsRegex.firstMatch(buildGradleContent);
+
+    if (pluginsMatch == null) {
+      print('plugins {} section not found in build.gradle!');
+      return;
     }
 
-    if (!buildGradleContent.contains('signingConfigs')) {
-      buildGradleContent = buildGradleContent.replaceFirst('android {', '''
-android {
-    signingConfigs {
-        release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-        }
-    }
-''');
+    final insertPositionAfterPlugins = pluginsMatch.end;
+
+    // Insert the code after plugins {}
+    var updatedBuildGradleContent =
+        '${buildGradleContent.substring(0, insertPositionAfterPlugins)}\n\n$codeToInsertAfterPlugins${buildGradleContent.substring(insertPositionAfterPlugins)}';
+
+    // Find the android {} section
+    final androidRegex = RegExp(r'android\s*\{');
+    final androidMatch = androidRegex.firstMatch(updatedBuildGradleContent);
+
+    if (androidMatch == null) {
+      print('android {} section not found in build.gradle!');
+      return;
     }
 
-    buildGradleFile.writeAsStringSync(buildGradleContent.replaceAll('<store-password>', keyPropertiesFile.readAsLinesSync()[0].split('=')[1].trim())
-        .replaceAll('<key-password>', keyPropertiesFile.readAsLinesSync()[1].split('=')[1].trim())
-        .replaceAll('<key-alias>', keyPropertiesFile.readAsLinesSync()[2].split('=')[1].trim()));
+    final insertPositionInsideAndroid = androidMatch.end;
+
+    // Insert the code inside android {}
+    updatedBuildGradleContent =
+        '${updatedBuildGradleContent.substring(0, insertPositionInsideAndroid)}\n$codeToInsertInsideAndroid${updatedBuildGradleContent.substring(insertPositionInsideAndroid)}';
+
+    // Write the updated content back to build.gradle
+    buildGradleFile.writeAsStringSync(updatedBuildGradleContent);
+
+    buildGradleFile.writeAsStringSync(buildGradleContent
+        .replaceAll('<store-password>',
+            keyPropertiesFile.readAsLinesSync()[0].split('=')[1].trim())
+        .replaceAll('<key-password>',
+            keyPropertiesFile.readAsLinesSync()[1].split('=')[1].trim())
+        .replaceAll('<key-alias>',
+            keyPropertiesFile.readAsLinesSync()[2].split('=')[1].trim()));
 
     print("\nRelease key configured successfully in build.gradle.");
   }
