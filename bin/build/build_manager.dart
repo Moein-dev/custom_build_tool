@@ -11,8 +11,8 @@ class BuildManager {
 
       if (!releaseKeyExists && buildType == 'release') {
         if (ReleaseKeyManager.promptForReleaseKeyCreation()) {
-          ReleaseKeyManager.createReleaseKey();
-          ReleaseKeyManager.configureReleaseKeyInGradle();
+         Map<String,dynamic> data = ReleaseKeyManager.createReleaseKey();
+          ReleaseKeyManager.configureReleaseKeyInGradle(data);
         }
       }
     }

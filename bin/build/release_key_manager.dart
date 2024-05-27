@@ -16,7 +16,7 @@ class ReleaseKeyManager {
     return choice == '1';
   }
 
-  static void createReleaseKey() {
+  static Map<String, dynamic> createReleaseKey() {
     print("\nCreating release key...");
 
     print("Please enter the following details:");
@@ -70,33 +70,40 @@ class ReleaseKeyManager {
     } else {
       print("\nKeystore created successfully.");
     }
+    return {
+      "storePass":storePass,
+      "keyPass":keyPass,
+      "alias":alias,
+    };
   }
 
-  static void configureReleaseKeyInGradle() {
+  static void configureReleaseKeyInGradle(Map<String, dynamic> data) {
     print("\nConfiguring release key in build.gradle...");
 
+    // Write the key properties file
     File keyPropertiesFile = File('android/key.properties');
     keyPropertiesFile.writeAsStringSync('''
-storePassword=<store-password>
-keyPassword=<key-password>
-keyAlias=<key-alias>
+storePassword=${data["storePass"]}
+keyPassword=${data["keyPass"]}
+keyAlias=${data["alias"]}
 storeFile=key.jks
 ''');
+    print("Key properties file created at android/key.properties");
 
-  // Define the path to the build.gradle file
-  final buildGradlePath = join('android', 'app', 'build.gradle');
+    // Define the path to the build.gradle file
+    final buildGradlePath = join('android', 'app', 'build.gradle');
 
-  // Read the build.gradle file
-  final buildGradleFile = File(buildGradlePath);
-  if (!buildGradleFile.existsSync()) {
-    print('build.gradle file not found!');
-    return;
-  }
+    // Read the build.gradle file
+    final buildGradleFile = File(buildGradlePath);
+    if (!buildGradleFile.existsSync()) {
+      print('build.gradle file not found!');
+      return;
+    }
 
-  final buildGradleContent = buildGradleFile.readAsStringSync();
+    final buildGradleContent = buildGradleFile.readAsStringSync();
 
-  // Define the code to be inserted after android { starts
-  final codeToInsertInsideAndroid = '''
+    // Define the code to be inserted after android { starts
+    final codeToInsertInsideAndroid = '''
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file('key.properties')
 if (keystorePropertiesFile.exists()) {
@@ -119,30 +126,23 @@ buildTypes {
 }
 ''';
 
-  // Find the android {} section
-  final androidRegex = RegExp(r'android\s*\{');
-  final androidMatch = androidRegex.firstMatch(buildGradleContent);
+    // Find the android {} section
+    final androidRegex = RegExp(r'android\s*\{');
+    final androidMatch = androidRegex.firstMatch(buildGradleContent);
 
-  if (androidMatch == null) {
-    print('android {} section not found in build.gradle!');
-    return;
-  }
+    if (androidMatch == null) {
+      print('android {} section not found in build.gradle!');
+      return;
+    }
 
-  final insertPositionInsideAndroid = androidMatch.end;
+    final insertPositionInsideAndroid = androidMatch.end;
 
-  // Insert the code inside android {}
-  final updatedBuildGradleContent = '${buildGradleContent.substring(0, insertPositionInsideAndroid)}\n$codeToInsertInsideAndroid${buildGradleContent.substring(insertPositionInsideAndroid)}';
+    // Insert the code inside android {}
+    final updatedBuildGradleContent =
+        '${buildGradleContent.substring(0, insertPositionInsideAndroid)}\n$codeToInsertInsideAndroid${buildGradleContent.substring(insertPositionInsideAndroid)}';
 
-  // Write the updated content back to build.gradle
-  buildGradleFile.writeAsStringSync(updatedBuildGradleContent);
-
-    buildGradleFile.writeAsStringSync(buildGradleContent
-        .replaceAll('<store-password>',
-            keyPropertiesFile.readAsLinesSync()[0].split('=')[1].trim())
-        .replaceAll('<key-password>',
-            keyPropertiesFile.readAsLinesSync()[1].split('=')[1].trim())
-        .replaceAll('<key-alias>',
-            keyPropertiesFile.readAsLinesSync()[2].split('=')[1].trim()));
+    // Write the updated content back to build.gradle
+    buildGradleFile.writeAsStringSync(updatedBuildGradleContent);
 
     print("\nRelease key configured successfully in build.gradle.");
   }
