@@ -35,7 +35,14 @@ void main(List<String> arguments) async {
     usePreferences = settings['default'] == true;
   }
 
-  int platformChoice = usePreferences ? settings['platformChoice'] : ConfigManager.getPlatformChoice();
+  // Ask all questions if default is set to false
+  if (!usePreferences) {
+    settings['platformChoice'] = ConfigManager.getPlatformChoice();
+    settings['build_type'] = BuildManager.getBuildType({}, {}, ConfigManager.getAllBuildTypes());
+    settings['noVersion'] = VersionManager.getVersionUpgradeChoice({}, {});
+  }
+
+  int platformChoice = settings['platformChoice'];
 
   List<String> buildTypes = [];
   if (platformChoice == 1 || platformChoice == 3) {
@@ -49,9 +56,9 @@ void main(List<String> arguments) async {
   Set<String> allBuildTypes = {...buildTypes.map((e) => e.toLowerCase())};
   allBuildTypes.add("test");
 
-  String buildType = usePreferences ? settings['build_type'] : BuildManager.getBuildType(settings, settings, allBuildTypes.toList());
+  String buildType = settings['build_type'];
 
-  bool noVersion = usePreferences ? settings['noVersion'] : VersionManager.getVersionUpgradeChoice(settings, settings) == 'no';
+  bool noVersion = settings['noVersion'];
 
   String version = VersionManager.getCurrentVersion();
   String newVersion = version;

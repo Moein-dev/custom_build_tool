@@ -1,72 +1,18 @@
 import 'dart:io';
-import 'settings_manager.dart';
+import 'dart:convert';
 
 class ConfigManager {
-  static Map<String, dynamic> loadConfig() {
-    return SettingsManager.loadSettings();
-  }
-
-  static void saveConfig(Map<String, dynamic> config) {
-    SettingsManager.saveSettings(config);
-  }
-
   static void configureDefaults() {
-    Map<String, dynamic> config = loadConfig();
+    Map<String, dynamic> config = {};
 
-    // Set default app paths
-    config['app_path'] = {
-      'android': "build${Platform.pathSeparator}app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk",
-      'ios': "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa"
-    };
+    // Configure default build type
+    config['platformChoice'] = getPlatformChoice();
+    config['build_type'] = 'release'; // Default build type
+    config['noVersion'] = false; // Default version upgrade choice
 
-    // Set default build type
-    print("Set default build type:\n");
-    List<String> buildTypes = _getBuildTypes();
-    for (int i = 0; i < buildTypes.length; i++) {
-      print("${i + 1}. ${buildTypes[i]}");
-    }
-    print("\n =>");
-    String? buildTypeChoice = stdin.readLineSync();
-    int choiceIndex = int.tryParse(buildTypeChoice!)! - 1;
-    config['build_type'] = buildTypes[choiceIndex];
-
-    // Set default version upgrade choice
-    print("Set default version upgrade choice:\n");
-    print("1. Yes");
-    print("2. No");
-    print("\n =>");
-    String? upgradeChoice = stdin.readLineSync();
-    config['noVersion'] = (upgradeChoice == '2');
-
-    // Set default saving option
-    print("Set default configuration:\n");
-    print("1. Yes");
-    print("2. No");
-    print("\n =>");
-    String? saveChoice = stdin.readLineSync();
-    config['default'] = (saveChoice == '1');
-
+    // Save configuration
     saveConfig(config);
     print("\nConfiguration saved.");
-  }
-
-  static void promptForDefaultConfig() {
-    print("Would you like to set the current configuration as default?\n");
-    print("1. Yes");
-    print("2. No");
-    print("\n =>");
-    String? choice = stdin.readLineSync();
-
-    if (choice == '1') {
-      configureDefaults();
-    } else {
-      print("\nProceeding without saving defaults.");
-    }
-  }
-
-  static List<String> _getBuildTypes() {
-    // Example build types, replace with actual fetching logic
-    return ['release', 'debug', 'profile', 'test'];
   }
 
   static int getPlatformChoice() {
@@ -76,12 +22,12 @@ class ConfigManager {
     print("3. Both");
     print("\n =>");
     String? platformChoice = stdin.readLineSync();
-    return int.tryParse(platformChoice!) ?? 3;
+    return int.parse(platformChoice!);
   }
 
   static List<String> getAndroidBuildTypes() {
     List<String> buildTypes = [];
-    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
+    File buildGradle = File('android/app/build.gradle');
     if (buildGradle.existsSync()) {
       String content = buildGradle.readAsStringSync();
       RegExp exp = RegExp(r'buildTypes\s*\{([^}]+)\}');
@@ -99,7 +45,7 @@ class ConfigManager {
 
   static List<String> getAndroidProductFlavors() {
     List<String> flavors = [];
-    File buildGradle = File('android${Platform.pathSeparator}app${Platform.pathSeparator}build.gradle');
+    File buildGradle = File('android/app/build.gradle');
     if (buildGradle.existsSync()) {
       String content = buildGradle.readAsStringSync();
       RegExp exp = RegExp(r'productFlavors\s*\{([^}]+)\}');
@@ -137,5 +83,44 @@ class ConfigManager {
       schemes = ['Release', 'Debug'];
     }
     return schemes;
+  }
+
+  static List<String> getAllBuildTypes() {
+    List<String> buildTypes = getAndroidBuildTypes();
+    buildTypes.addAll(getAndroidProductFlavors());
+    buildTypes.addAll(getIOSSchemes());
+    buildTypes = buildTypes.map((e) => e.toLowerCase()).toList();
+    if (!buildTypes.contains('debug')) {
+      buildTypes.add('debug');
+    }
+    return buildTypes;
+  }
+
+  static Map<String, dynamic> loadConfig() {
+    try {
+      String content = File('config.json').readAsStringSync();
+      return jsonDecode(content);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  static void saveConfig(Map<String, dynamic> config) {
+    String content = jsonEncode(config);
+    File('config.json').writeAsStringSync(content);
+  }
+
+  static void promptForDefaultConfig() {
+    print("Would you like to set the current configuration as default?\n");
+    print("1. Yes");
+    print("2. No");
+    print("\n =>");
+    String? choice = stdin.readLineSync();
+
+    if (choice == '1') {
+      configureDefaults();
+    } else {
+      print("\nProceeding without saving defaults.");
+    }
   }
 }
