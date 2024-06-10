@@ -34,7 +34,7 @@ class BuildManager {
     print("\nBuild completed successfully.");
 
     String defaultApkPath = _getApkPath(buildType == 'test' ? 'release' : buildType, 'android');
-    String newApkName = "${appName}_v${semanticVersion}_${buildType == 'test' ? 'test' : buildType}.apk";
+    String newApkName = "${appName}_v$semanticVersion-${buildType == 'test' ? 'test' : buildType}.apk";
 
     Map<String, dynamic> settings = SettingsManager.loadSettings();
     String userSpecifiedPath = settings['app_path']?['android'] ?? "build${Platform.pathSeparator}app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk";
