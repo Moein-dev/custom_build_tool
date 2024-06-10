@@ -1,6 +1,6 @@
 name: custom_build_tool
 description: A package for Streamline Version Updates and APK Builds in Flutter Projects.
-version: 1.2.17
+version: 1.2.18
 repository: https://github.com/Moein-dev/custom_build_tool
 environment:
   sdk: '>=2.12.0 <4.0.0'
@@ -18,3 +18,8 @@ dev_dependencies:
 
 executables:
   custom_build_tool: custom_build_tool
+
+
+platforms:
+  android:
+  ios:  
