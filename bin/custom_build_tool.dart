@@ -25,7 +25,8 @@ void main(List<String> arguments) async {
   // Load user settings
   Map<String, dynamic> settings = SettingsManager.loadSettings();
   print("Loaded settings: $settings"); // Debug print
-  print("Type of 'default' in settings: ${settings['default']?.runtimeType}"); // Debug print
+  print(
+      "Type of 'default' in settings: ${settings['default']?.runtimeType}"); // Debug print
   bool usePreferences = settings['default'] == true;
 
   // If settings are empty, it's the first run
@@ -39,7 +40,8 @@ void main(List<String> arguments) async {
   // Ask all questions if default is set to false
   if (!usePreferences) {
     settings['platformChoice'] = ConfigManager.getPlatformChoice();
-    settings['build_type'] = BuildManager.getBuildType({}, {}, ConfigManager.getAllBuildTypes());
+    settings['build_type'] =
+        BuildManager.getBuildType({}, {}, ConfigManager.getAllBuildTypes());
     settings['noVersion'] = VersionManager.getVersionUpgradeChoice({}, {});
   }
 
@@ -68,7 +70,8 @@ void main(List<String> arguments) async {
   if (!noVersion) {
     String upgradeType = VersionManager.getUpgradeType();
     newVersion = VersionManager.incrementVersion(version, upgradeType);
-    VersionManager.updateVersion(newVersion, File('pubspec.yaml').readAsStringSync());
+    VersionManager.updateVersion(
+        newVersion, File('pubspec.yaml').readAsStringSync());
     semanticVersion = newVersion.split('+').first;
   } else {
     print("\nUsing existing version $version");

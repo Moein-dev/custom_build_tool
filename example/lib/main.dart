@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
               'this is your app Version:',
             ),
             Text(
-            widget.info.appVersion!,
+              widget.info.appVersion!,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
           ],

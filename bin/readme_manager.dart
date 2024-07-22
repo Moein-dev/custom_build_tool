@@ -9,7 +9,8 @@ class ReadmeManager {
     String? choice = stdin.readLineSync();
 
     if (choice == '1') {
-      print("\nEnter the details for this version (end input with an empty line):");
+      print(
+          "\nEnter the details for this version (end input with an empty line):");
 
       StringBuffer detailsBuffer = StringBuffer();
       while (true) {
@@ -42,7 +43,8 @@ version: $version
 $details
 
 $readmeContent
-  '''.trim();
+  '''
+        .trim();
 
     readmeFile.writeAsStringSync(newContent);
 

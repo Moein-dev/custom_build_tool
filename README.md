@@ -8,7 +8,7 @@ To add `custom_build_tool` to your project, include it in your `dev_dependencies
 
 ```yaml
 dev_dependencies:
-  custom_build_tool: ^1.2.19
+  custom_build_tool: ^1.2.20
 ```
 
 Then, run the following command to get the package:
@@ -51,7 +51,7 @@ Here's a step-by-step example of how to use the custom_build_tool in your Flutte
 
 ```yaml
 dev_dependencies:
-  custom_build_tool: ^1.2.19
+  custom_build_tool: ^1.2.20
 ```
 
 2.Get the package:

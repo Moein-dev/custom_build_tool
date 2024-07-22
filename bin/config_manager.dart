@@ -35,7 +35,8 @@ class ConfigManager {
       if (match != null) {
         String buildTypesContent = match.group(1)!;
         RegExp buildTypeExp = RegExp(r'\b(\w+)\s*\{');
-        for (Match buildTypeMatch in buildTypeExp.allMatches(buildTypesContent)) {
+        for (Match buildTypeMatch
+            in buildTypeExp.allMatches(buildTypesContent)) {
           buildTypes.add(buildTypeMatch.group(1)!);
         }
       }

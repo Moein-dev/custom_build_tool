@@ -67,13 +67,15 @@ class VersionManager {
 
   static void updateVersion(String newVersion, String pubspecContent) {
     String currentVersion = getCurrentVersion();
-    String updatedPubspecContent = pubspecContent.replaceFirst('version: $currentVersion', 'version: $newVersion');
+    String updatedPubspecContent = pubspecContent.replaceFirst(
+        'version: $currentVersion', 'version: $newVersion');
     File pubspecFile = File('pubspec.yaml');
     pubspecFile.writeAsStringSync(updatedPubspecContent);
     print("\nVersion updated to $newVersion");
   }
 
-  static String getVersionUpgradeChoice(Map<String, dynamic> preferences, Map<String, dynamic> config) {
+  static String getVersionUpgradeChoice(
+      Map<String, dynamic> preferences, Map<String, dynamic> config) {
     bool? noVersion = preferences['noVersion'] ?? config['noVersion'];
 
     if (noVersion == null) {
@@ -85,7 +87,8 @@ class VersionManager {
 
       noVersion = (upgradeChoice == '2');
     } else {
-      print("\nUsing default version upgrade choice: ${noVersion ? 'No' : 'Yes'}");
+      print(
+          "\nUsing default version upgrade choice: ${noVersion ? 'No' : 'Yes'}");
     }
     return noVersion ? 'no' : 'yes';
   }

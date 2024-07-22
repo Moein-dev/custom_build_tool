@@ -71,9 +71,9 @@ class ReleaseKeyManager {
       print("\nKeystore created successfully.");
     }
     return {
-      "storePass":storePass,
-      "keyPass":keyPass,
-      "alias":alias,
+      "storePass": storePass,
+      "keyPass": keyPass,
+      "alias": alias,
     };
   }
 

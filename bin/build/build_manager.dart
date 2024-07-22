@@ -3,7 +3,8 @@ import '../settings_manager.dart';
 import 'release_key_manager.dart';
 
 class BuildManager {
-  static void buildAndroidApk(String appName, String semanticVersion, String buildType) {
+  static void buildAndroidApk(
+      String appName, String semanticVersion, String buildType) {
     print("\nBuilding APK for Android with build type: $buildType...");
 
     if (buildType != 'test') {
@@ -11,7 +12,7 @@ class BuildManager {
 
       if (!releaseKeyExists && buildType == 'release') {
         if (ReleaseKeyManager.promptForReleaseKeyCreation()) {
-         Map<String,dynamic> data = ReleaseKeyManager.createReleaseKey();
+          Map<String, dynamic> data = ReleaseKeyManager.createReleaseKey();
           ReleaseKeyManager.configureReleaseKeyInGradle(data);
         }
       }
@@ -19,7 +20,8 @@ class BuildManager {
 
     List<String> buildArgs = ['build', 'apk'];
     if (buildType == 'release' && !ReleaseKeyManager.checkReleaseKeyExists()) {
-      print("\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
+      print(
+          "\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
       buildArgs.remove('--release');
     } else if (buildType != 'test') {
       buildArgs.add('--$buildType');
@@ -27,18 +29,24 @@ class BuildManager {
 
     ProcessResult result = Process.runSync('flutter', buildArgs);
     if (result.exitCode != 0) {
-      print("\nError: Failed to build APK. Please check the flutter build output for details.");
+      print(
+          "\nError: Failed to build APK. Please check the flutter build output for details.");
       print(result.stderr);
       exit(1);
     }
     print("\nBuild completed successfully.");
 
-    String defaultApkPath = _getApkPath(buildType == 'test' ? 'release' : buildType, 'android');
-    String newApkName = "${appName}_v$semanticVersion-${buildType == 'test' ? 'test' : buildType}.apk";
+    String defaultApkPath =
+        _getApkPath(buildType == 'test' ? 'release' : buildType, 'android');
+    String newApkName =
+        "${appName}_v$semanticVersion-${buildType == 'test' ? 'test' : buildType}.apk";
 
     Map<String, dynamic> settings = SettingsManager.loadSettings();
-    String userSpecifiedPath = settings['app_path']?['android'] ?? "build${Platform.pathSeparator}app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk";
-    String newApkPath = userSpecifiedPath.endsWith(Platform.pathSeparator) ? "$userSpecifiedPath$newApkName" : "$userSpecifiedPath${Platform.pathSeparator}$newApkName";
+    String userSpecifiedPath = settings['app_path']?['android'] ??
+        "build${Platform.pathSeparator}app${Platform.pathSeparator}outputs${Platform.pathSeparator}flutter-apk";
+    String newApkPath = userSpecifiedPath.endsWith(Platform.pathSeparator)
+        ? "$userSpecifiedPath$newApkName"
+        : "$userSpecifiedPath${Platform.pathSeparator}$newApkName";
 
     if (File(defaultApkPath).existsSync()) {
       if (defaultApkPath != newApkPath) {
@@ -47,30 +55,37 @@ class BuildManager {
       }
       print("APK renamed to $newApkName\n");
       print("You can find the APK at:\n");
-      print("\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$newApkPath\x1B[0m");
+      print(
+          "\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$newApkPath\x1B[0m");
     } else {
-      print("\nError: APK file not found at $defaultApkPath. Please check the build output.");
+      print(
+          "\nError: APK file not found at $defaultApkPath. Please check the build output.");
     }
   }
 
-  static void buildIosApp(String appName, String semanticVersion, String buildType) {
+  static void buildIosApp(
+      String appName, String semanticVersion, String buildType) {
     print("\nBuilding app for iOS with build type: $buildType...");
 
     List<String> buildArgs = ['build', 'ios', '--$buildType'];
     ProcessResult result = Process.runSync('flutter', buildArgs);
     if (result.exitCode != 0) {
-      print("\nError: Failed to build iOS app. Please check the flutter build output for details.");
+      print(
+          "\nError: Failed to build iOS app. Please check the flutter build output for details.");
       print(result.stderr);
       exit(1);
     }
     print("\nBuild completed successfully.");
 
-    String defaultIpaPath = "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa";
+    String defaultIpaPath =
+        "build${Platform.pathSeparator}ios${Platform.pathSeparator}ipa";
     String newIpaName = "${appName}_v${semanticVersion}_$buildType.ipa";
 
     Map<String, dynamic> settings = SettingsManager.loadSettings();
     String userSpecifiedPath = settings['app_path']?['ios'] ?? defaultIpaPath;
-    String userIpaPath = userSpecifiedPath.endsWith(Platform.pathSeparator) ? "$userSpecifiedPath$newIpaName" : "$userSpecifiedPath${Platform.pathSeparator}$newIpaName";
+    String userIpaPath = userSpecifiedPath.endsWith(Platform.pathSeparator)
+        ? "$userSpecifiedPath$newIpaName"
+        : "$userSpecifiedPath${Platform.pathSeparator}$newIpaName";
 
     if (Directory(defaultIpaPath).existsSync()) {
       Directory(defaultIpaPath).listSync().forEach((file) {
@@ -81,11 +96,13 @@ class BuildManager {
           }
           print("IPA renamed to $newIpaName\n");
           print("You can find the IPA at:\n");
-          print("\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$userIpaPath\x1B[0m");
+          print(
+              "\x1B[34mfile://${Directory.current.path}${Platform.pathSeparator}$userIpaPath\x1B[0m");
         }
       });
     } else {
-      print("\nError: IPA file not found at $defaultIpaPath. Please check the build output.");
+      print(
+          "\nError: IPA file not found at $defaultIpaPath. Please check the build output.");
     }
   }
 
@@ -107,7 +124,8 @@ class BuildManager {
     }
   }
 
-  static String getBuildType(Map<String, dynamic> preferences, Map<String, dynamic> config, List<String> allBuildTypes) {
+  static String getBuildType(Map<String, dynamic> preferences,
+      Map<String, dynamic> config, List<String> allBuildTypes) {
     if (!allBuildTypes.contains('debug')) {
       allBuildTypes.add('debug');
     }
