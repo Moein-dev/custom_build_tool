@@ -24,3 +24,7 @@
 ## [1.2.21] - 2024-07-22
 
 - fix some bugs about build types
+
+## [1.2.22] - 2024-07-22
+
+- update settings for default settings

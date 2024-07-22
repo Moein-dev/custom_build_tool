@@ -2,16 +2,16 @@ import 'dart:io';
 import 'dart:convert';
 
 class SettingsManager {
+  static const String settingsFilePath = 'settings.json';
+
   static Map<String, dynamic> loadSettings() {
     try {
-      String content = File('settings.json').readAsStringSync();
-      Map<String, dynamic> settings = jsonDecode(content);
-      // Ensure 'default' is a boolean
-      if (settings.containsKey('default') && settings['default'] is! bool) {
-        settings['default'] =
-            settings['default'].toString().toLowerCase() == 'true';
+      if (File(settingsFilePath).existsSync()) {
+        String content = File(settingsFilePath).readAsStringSync();
+        return jsonDecode(content);
+      } else {
+        return {};
       }
-      return settings;
     } catch (e) {
       return {};
     }
@@ -19,10 +19,10 @@ class SettingsManager {
 
   static void saveSettings(Map<String, dynamic> settings) {
     String content = jsonEncode(settings);
-    File('settings.json').writeAsStringSync(content);
+    File(settingsFilePath).writeAsStringSync(content);
   }
 
   static void resetSettings() {
-    File('settings.json').writeAsStringSync('{}');
+    File(settingsFilePath).writeAsStringSync('{}');
   }
 }

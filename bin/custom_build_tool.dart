@@ -24,28 +24,34 @@ void main(List<String> arguments) async {
 
   // Load user settings
   Map<String, dynamic> settings = SettingsManager.loadSettings();
-  print("Loaded settings: $settings"); // Debug print
-  print(
-      "Type of 'default' in settings: ${settings['default']?.runtimeType}"); // Debug print
-  bool usePreferences = settings['default'] == true;
+  bool usePreferences = settings.isNotEmpty && settings['default'] == true;
 
   // If settings are empty, it's the first run
   if (settings.isEmpty) {
     print("\nIt looks like this is your first time running the CLI.");
-    ConfigManager.promptForDefaultConfig();
-    settings = SettingsManager.loadSettings();
-    usePreferences = settings['default'] == true;
+    print("Would you like to set the current configuration as default?\n");
+    print("1. Yes");
+    print("2. No");
+    print("\n =>");
+    String? response = stdin.readLineSync();
+
+    if (response == '1') {
+      settings['default'] = true;
+    } else {
+      settings['default'] = false;
+      SettingsManager.resetSettings();
+    }
   }
 
-  // Ask all questions if default is set to false
   if (!usePreferences) {
     settings['platformChoice'] = ConfigManager.getPlatformChoice();
-    settings['build_type'] =
-        BuildManager.getBuildType({}, {}, ConfigManager.getAllBuildTypes());
-    settings['noVersion'] = VersionManager.getVersionUpgradeChoice({}, {});
+    settings['build_type'] = BuildManager.getBuildType({}, {}, ConfigManager.getAllBuildTypes());
+    settings['upgrade_version'] = VersionManager.getVersionUpgradeChoice({}, {});
   }
 
   int platformChoice = settings['platformChoice'];
+  String buildType = settings['build_type'];
+  bool upgradeVersion = settings['upgrade_version'] == 'yes';
 
   List<String> buildTypes = [];
   if (platformChoice == 1 || platformChoice == 3) {
@@ -59,19 +65,14 @@ void main(List<String> arguments) async {
   Set<String> allBuildTypes = {...buildTypes.map((e) => e.toLowerCase())};
   allBuildTypes.add("test");
 
-  String buildType = settings['build_type'];
-
-  bool noVersion = settings['noVersion'];
-
   String version = VersionManager.getCurrentVersion();
   String newVersion = version;
   String semanticVersion = version.split('+').first;
 
-  if (!noVersion) {
+  if (upgradeVersion) {
     String upgradeType = VersionManager.getUpgradeType();
     newVersion = VersionManager.incrementVersion(version, upgradeType);
-    VersionManager.updateVersion(
-        newVersion, File('pubspec.yaml').readAsStringSync());
+    VersionManager.updateVersion(newVersion, File('pubspec.yaml').readAsStringSync());
     semanticVersion = newVersion.split('+').first;
   } else {
     print("\nUsing existing version $version");
@@ -90,8 +91,8 @@ void main(List<String> arguments) async {
     SettingsManager.saveSettings({
       'platformChoice': platformChoice,
       'build_type': buildType,
-      'noVersion': noVersion,
-      'default': false,
+      'upgrade_version': upgradeVersion ? 'yes' : 'no',
+      'default': settings['default'],
     });
   }
 
