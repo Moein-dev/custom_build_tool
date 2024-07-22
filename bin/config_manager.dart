@@ -86,16 +86,18 @@ class ConfigManager {
     return schemes;
   }
 
-  static List<String> getAllBuildTypes() {
-    List<String> buildTypes = getAndroidBuildTypes();
-    buildTypes.addAll(getAndroidProductFlavors());
-    buildTypes.addAll(getIOSSchemes());
-    buildTypes = buildTypes.map((e) => e.toLowerCase()).toList();
-    if (!buildTypes.contains('debug')) {
-      buildTypes.add('debug');
-    }
-    return buildTypes;
+static List<String> getAllBuildTypes() {
+  Set<String> buildTypes = {};
+  buildTypes.addAll(getAndroidBuildTypes());
+  buildTypes.addAll(getAndroidProductFlavors());
+  buildTypes.addAll(getIOSSchemes());
+  buildTypes = buildTypes.map((e) => e.toLowerCase()).toSet();
+  if (!buildTypes.contains('debug')) {
+    buildTypes.add('debug');
   }
+  buildTypes.add('test'); // Ensure "test" is included
+  return buildTypes.toList();
+}
 
   static Map<String, dynamic> loadConfig() {
     try {

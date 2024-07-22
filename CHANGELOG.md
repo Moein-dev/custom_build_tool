@@ -20,3 +20,7 @@
 ## [1.2.20] - 2024-07-22
 
 - fix some issues
+
+## [1.2.21] - 2024-07-22
+
+- fix some bugs about build types

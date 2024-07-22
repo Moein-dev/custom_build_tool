@@ -19,12 +19,15 @@ class BuildManager {
     }
 
     List<String> buildArgs = ['build', 'apk'];
-    if (buildType == 'release' && !ReleaseKeyManager.checkReleaseKeyExists()) {
-      print(
-          "\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
-      buildArgs.remove('--release');
-    } else if (buildType != 'test') {
-      buildArgs.add('--$buildType');
+    if (buildType != 'test') {
+      if (buildType == 'release' &&
+          !ReleaseKeyManager.checkReleaseKeyExists()) {
+        print(
+            "\nYou don't have a release key in android/app/build.gradle. Building without --release flag.");
+        buildArgs.remove('--release');
+      } else {
+        buildArgs.add('--$buildType');
+      }
     }
 
     ProcessResult result = Process.runSync('flutter', buildArgs);
