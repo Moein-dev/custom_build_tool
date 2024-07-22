@@ -5,7 +5,13 @@ class SettingsManager {
   static Map<String, dynamic> loadSettings() {
     try {
       String content = File('settings.json').readAsStringSync();
-      return jsonDecode(content);
+      Map<String, dynamic> settings = jsonDecode(content);
+      // Ensure 'default' is a boolean
+      if (settings.containsKey('default') && settings['default'] is! bool) {
+        settings['default'] =
+            settings['default'].toString().toLowerCase() == 'true';
+      }
+      return settings;
     } catch (e) {
       return {};
     }

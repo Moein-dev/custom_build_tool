@@ -6,7 +6,6 @@ import 'readme_manager.dart';
 import 'settings_manager.dart';
 
 void main(List<String> arguments) async {
-
   if (arguments.contains("--help")) {
     print("\nUsage: flutter pub run custom_build_tool [--reset] [--configure]");
     exit(1);
@@ -25,6 +24,8 @@ void main(List<String> arguments) async {
 
   // Load user settings
   Map<String, dynamic> settings = SettingsManager.loadSettings();
+  print("Loaded settings: $settings"); // Debug print
+  print("Type of 'default' in settings: ${settings['default']?.runtimeType}"); // Debug print
   bool usePreferences = settings['default'] == true;
 
   // If settings are empty, it's the first run
