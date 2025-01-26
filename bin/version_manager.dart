@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:yaml/yaml.dart';
+import 'utils/input_handler.dart';
 
 class VersionManager {
   static String getCurrentVersion() {
@@ -74,18 +75,17 @@ class VersionManager {
     print("\nVersion updated to $newVersion");
   }
 
-  static String getVersionUpgradeChoice(
-      Map<String, dynamic> preferences, Map<String, dynamic> config) {
+  static Future<String> getVersionUpgradeChoice(
+      Map<String, dynamic> preferences, Map<String, dynamic> config) async {
     bool? noVersion = preferences['noVersion'] ?? config['noVersion'];
 
     if (noVersion == null) {
       print("Upgrade version?\n");
       print("1. Yes");
       print("2. No");
-      print("\n =>");
-      String? upgradeChoice = stdin.readLineSync();
-
-      noVersion = (upgradeChoice == '2');
+      stdout.write("\n => ");
+      final input = await InputHandler.readKey();
+      noVersion = input == '2';
     } else {
       print(
           "\nUsing default version upgrade choice: ${noVersion ? 'No' : 'Yes'}");
@@ -93,15 +93,15 @@ class VersionManager {
     return noVersion ? 'no' : 'yes';
   }
 
-  static String getUpgradeType() {
+  static Future<String> getUpgradeType() async {
     print("What is your upgrade type?\n");
     print("1. Major");
     print("2. Minor");
     print("3. Patch");
-    print("\n =>");
-    String? upgradeTypeChoice = stdin.readLineSync();
+    stdout.write("\n => ");
+    final input = await InputHandler.readKey();
 
-    switch (upgradeTypeChoice) {
+    switch (input) {
       case '1':
         return 'major';
       case '2':

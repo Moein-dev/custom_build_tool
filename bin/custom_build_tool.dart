@@ -4,6 +4,7 @@ import 'config_manager.dart';
 import 'version_manager.dart';
 import 'readme_manager.dart';
 import 'settings_manager.dart';
+import 'utils/input_handler.dart';
 
 void main(List<String> arguments) async {
   if (arguments.contains("--help")) {
@@ -32,10 +33,10 @@ void main(List<String> arguments) async {
     print("Would you like to set the current configuration as default?\n");
     print("1. Yes");
     print("2. No");
-    print("\n =>");
-    String? response = stdin.readLineSync();
+    stdout.write("\n => ");
+    final input = await InputHandler.readKey();
 
-    if (response == '1') {
+    if (input == '1') {
       settings['default'] = true;
     } else {
       settings['default'] = false;
@@ -44,9 +45,14 @@ void main(List<String> arguments) async {
   }
 
   if (!usePreferences) {
-    settings['platformChoice'] = ConfigManager.getPlatformChoice();
-    settings['build_type'] = BuildManager.getBuildType({}, {}, ConfigManager.getAllBuildTypes());
-    settings['upgrade_version'] = VersionManager.getVersionUpgradeChoice({}, {});
+    int platformChoice = await ConfigManager.getPlatformChoice();
+    settings['platformChoice'] = platformChoice;
+    String buildType = await BuildManager.getBuildType(
+        {}, {}, ConfigManager.getAllBuildTypes());
+    settings['build_type'] = buildType;
+    String upgradeVersion =
+        await VersionManager.getVersionUpgradeChoice({}, {});
+    settings['upgrade_version'] = upgradeVersion;
   }
 
   int platformChoice = settings['platformChoice'];
@@ -70,9 +76,10 @@ void main(List<String> arguments) async {
   String semanticVersion = version.split('+').first;
 
   if (upgradeVersion) {
-    String upgradeType = VersionManager.getUpgradeType();
+    String upgradeType = await VersionManager.getUpgradeType();
     newVersion = VersionManager.incrementVersion(version, upgradeType);
-    VersionManager.updateVersion(newVersion, File('pubspec.yaml').readAsStringSync());
+    VersionManager.updateVersion(
+        newVersion, File('pubspec.yaml').readAsStringSync());
     semanticVersion = newVersion.split('+').first;
   } else {
     print("\nUsing existing version $version");

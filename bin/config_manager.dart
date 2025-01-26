@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'utils/input_handler.dart';
 
 class ConfigManager {
   static void configureDefaults() {
@@ -15,14 +16,15 @@ class ConfigManager {
     print("\nConfiguration saved.");
   }
 
-  static int getPlatformChoice() {
+  static Future<int> getPlatformChoice() async {
     print("Choose your platform:\n");
     print("1. Android");
     print("2. iOS");
     print("3. Both");
-    print("\n =>");
-    String? platformChoice = stdin.readLineSync();
-    return int.parse(platformChoice!);
+    stdout.write("\n => ");
+
+    final input = await InputHandler.readKey();
+    return int.parse(input);
   }
 
   static List<String> getAndroidBuildTypes() {
@@ -86,18 +88,18 @@ class ConfigManager {
     return schemes;
   }
 
-static List<String> getAllBuildTypes() {
-  Set<String> buildTypes = {};
-  buildTypes.addAll(getAndroidBuildTypes());
-  buildTypes.addAll(getAndroidProductFlavors());
-  buildTypes.addAll(getIOSSchemes());
-  buildTypes = buildTypes.map((e) => e.toLowerCase()).toSet();
-  if (!buildTypes.contains('debug')) {
-    buildTypes.add('debug');
+  static List<String> getAllBuildTypes() {
+    Set<String> buildTypes = {};
+    buildTypes.addAll(getAndroidBuildTypes());
+    buildTypes.addAll(getAndroidProductFlavors());
+    buildTypes.addAll(getIOSSchemes());
+    buildTypes = buildTypes.map((e) => e.toLowerCase()).toSet();
+    if (!buildTypes.contains('debug')) {
+      buildTypes.add('debug');
+    }
+    buildTypes.add('test'); // Ensure "test" is included
+    return buildTypes.toList();
   }
-  buildTypes.add('test'); // Ensure "test" is included
-  return buildTypes.toList();
-}
 
   static Map<String, dynamic> loadConfig() {
     try {
@@ -113,17 +115,12 @@ static List<String> getAllBuildTypes() {
     File('config.json').writeAsStringSync(content);
   }
 
-  static void promptForDefaultConfig() {
+  static Future<bool> promptForDefaultConfig() async {
     print("Would you like to set the current configuration as default?\n");
     print("1. Yes");
     print("2. No");
-    print("\n =>");
-    String? choice = stdin.readLineSync();
-
-    if (choice == '1') {
-      configureDefaults();
-    } else {
-      print("\nProceeding without saving defaults.");
-    }
+    stdout.write("\n => ");
+    final input = await InputHandler.readKey();
+    return input == '1';
   }
 }

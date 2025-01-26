@@ -1,43 +1,44 @@
 import 'dart:io';
 
 import 'package:path/path.dart';
+import '../utils/input_handler.dart';
 
 class ReleaseKeyManager {
   static bool checkReleaseKeyExists() {
     return File('android/app/key.jks').existsSync();
   }
 
-  static bool promptForReleaseKeyCreation() {
+  static Future<bool> promptForReleaseKeyCreation() async {
     print("\nDo you want to create a release key?\n");
     print("1. Yes");
     print("2. No");
-    print("\n =>");
-    String? choice = stdin.readLineSync();
-    return choice == '1';
+    stdout.write("\n => ");
+    final input = await InputHandler.readKey();
+    return input == '1';
   }
 
-  static Map<String, dynamic> createReleaseKey() {
+  static Future<Map<String, dynamic>> createReleaseKey() async {
     print("\nCreating release key...");
 
     print("Please enter the following details:");
     print("Key store password: ");
-    String? storePass = stdin.readLineSync();
+    String? storePass = await InputHandler.readLineWithEcho(false);
     print("Key alias: ");
-    String? alias = stdin.readLineSync();
+    String? alias = await InputHandler.readLineWithEcho(true);
     print("Key password: ");
-    String? keyPass = stdin.readLineSync();
+    String? keyPass = await InputHandler.readLineWithEcho(false);
     print("Your first and last name: ");
-    String? dname = stdin.readLineSync();
+    String? dname = await InputHandler.readLineWithEcho(true);
     print("Your organizational unit: ");
-    String? ou = stdin.readLineSync();
+    String? ou = await InputHandler.readLineWithEcho(true);
     print("Your organization: ");
-    String? o = stdin.readLineSync();
+    String? o = await InputHandler.readLineWithEcho(true);
     print("Your city or locality: ");
-    String? l = stdin.readLineSync();
+    String? l = await InputHandler.readLineWithEcho(true);
     print("Your state or province: ");
-    String? s = stdin.readLineSync();
+    String? s = await InputHandler.readLineWithEcho(true);
     print("Your two-letter country code: ");
-    String? c = stdin.readLineSync();
+    String? c = await InputHandler.readLineWithEcho(true);
 
     String dnameComplete = 'CN=$dname, OU=$ou, O=$o, L=$l, S=$s, C=$c';
 
@@ -53,13 +54,13 @@ class ReleaseKeyManager {
       '-validity',
       '10000',
       '-alias',
-      alias!,
+      alias,
       '-dname',
       dnameComplete,
       '-storepass',
-      storePass!,
+      storePass,
       '-keypass',
-      keyPass!
+      keyPass
     ]);
 
     if (result.exitCode != 0) {

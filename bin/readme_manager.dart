@@ -1,14 +1,15 @@
 import 'dart:io';
+import 'utils/input_handler.dart';
 
 class ReadmeManager {
-  static void promptForReadmeUpdate(String version) {
+  static void promptForReadmeUpdate(String version) async {
     print("\nDo you want to add details in README.md for this version?\n");
     print("1. Yes");
     print("2. No");
-    print("\n =>");
-    String? choice = stdin.readLineSync();
+    stdout.write("\n => ");
+    final input = await InputHandler.readKey();
 
-    if (choice == '1') {
+    if (input == '1') {
       print(
           "\nEnter the details for this version (end input with an empty line):");
 

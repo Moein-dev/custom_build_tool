@@ -1,18 +1,22 @@
 import 'dart:io';
 import '../settings_manager.dart';
 import 'release_key_manager.dart';
+import '../utils/input_handler.dart';
 
 class BuildManager {
   static void buildAndroidApk(
-      String appName, String semanticVersion, String buildType) {
+      String appName, String semanticVersion, String buildType) async {
     print("\nBuilding APK for Android with build type: $buildType...");
 
     if (buildType != 'test') {
       bool releaseKeyExists = ReleaseKeyManager.checkReleaseKeyExists();
 
       if (!releaseKeyExists && buildType == 'release') {
-        if (ReleaseKeyManager.promptForReleaseKeyCreation()) {
-          Map<String, dynamic> data = ReleaseKeyManager.createReleaseKey();
+        bool promptForReleaseKeyCreation =
+            await ReleaseKeyManager.promptForReleaseKeyCreation();
+        if (promptForReleaseKeyCreation) {
+          Map<String, dynamic> data =
+              await ReleaseKeyManager.createReleaseKey();
           ReleaseKeyManager.configureReleaseKeyInGradle(data);
         }
       }
@@ -127,8 +131,8 @@ class BuildManager {
     }
   }
 
-  static String getBuildType(Map<String, dynamic> preferences,
-      Map<String, dynamic> config, List<String> allBuildTypes) {
+  static Future<String> getBuildType(Map<String, dynamic> preferences,
+      Map<String, dynamic> config, List<String> allBuildTypes) async {
     if (!allBuildTypes.contains('debug')) {
       allBuildTypes.add('debug');
     }
@@ -142,12 +146,11 @@ class BuildManager {
         for (int i = 0; i < allBuildTypes.length; i++) {
           print("${i + 1}. ${allBuildTypes[i]}");
         }
-        print("\n =>");
-        String? buildTypeChoice = stdin.readLineSync();
-        choiceIndex = int.tryParse(buildTypeChoice!) ?? -1;
-        if (choiceIndex < 1 || choiceIndex > allBuildTypes.length) {
-          print("\nInvalid choice. Please select a valid option.\n");
-        }
+        stdout.write("\n => ");
+
+        // Read user input
+        final input = await InputHandler.readKey();
+        choiceIndex = int.tryParse(input) ?? -1;
       } while (choiceIndex < 1 || choiceIndex > allBuildTypes.length);
       buildType = allBuildTypes[choiceIndex - 1];
     } else {
